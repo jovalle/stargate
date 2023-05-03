@@ -1,8 +1,9 @@
 # Environment file
 .env
 
-# Pihole
+# Pi-hole
 *.bak
 *.db
+setupVars.conf
 dhcp.leases
 
