@@ -1,0 +1,21 @@
+# /etc/systemd/system/stargate.service
+
+[Unit]
+Description=Stargate Composition
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=5
+WorkingDirectory=/etc/stargate
+EnvironmentFile=/etc/stargate/.env
+ExecReload=/usr/bin/docker-compose stop \
+  /usr/bin/docker-compose pull \
+  /usr/bin/docker-compose up -d
+ExecStart=/usr/bin/docker-compose up
+ExecStop=/usr/bin/docker-compose down -v
+
+[Install]
+WantedBy=multi-user.target
