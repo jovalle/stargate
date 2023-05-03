@@ -1,2 +1,8 @@
 # Environment file
 .env
+
+# Pihole
+*.bak
+*.db
+dhcp.leases
+
