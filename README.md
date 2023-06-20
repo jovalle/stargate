@@ -7,6 +7,7 @@ Services in `docker-compose.yaml` are currently set to pull environment variable
 
 ```
 # common
+PROFILE="--profile internal" # OPTIONAL feature gate
 PGID=1000
 PUID=1000
 TZ="America/New_York"
@@ -22,6 +23,13 @@ PROXIED=true
 
 # pi-hole
 WEBPASSWORD="REDACTED"
+
+# traefik
+DOMAIN="example.net"
+CLOUDFLARE_DNS_API_TOKEN="REDACTED"
+CLOUDFLARE_EMAIL="REDACTED"
+TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL="REDACTED"
+VIRTUAL_HOST="stargate.${DOMAIN}"
 ```
 
 ## Considerations

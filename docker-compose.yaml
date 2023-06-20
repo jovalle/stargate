@@ -1,24 +1,98 @@
-version: "3"
+version: "3.8"
 services:
   cloudflared:
-    image: docker.io/cloudflare/cloudflared:latest
+    command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
     container_name: cloudflared
     env_file: .env
+    image: cloudflare/cloudflared:latest
+    networks:
+      - traefik
+    profiles: ['internal']
     restart: "unless-stopped"
-    command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
   ddns:
-    image: oznu/cloudflare-ddns:latest
     container_name: ddns
     env_file: .env
+    image: oznu/cloudflare-ddns:latest
+    networks:
+      - traefik
     restart: "unless-stopped"
   pihole:
-    image: pihole/pihole:latest
-    container_name: pihole
-    env_file: .env
-    restart: "unless-stopped"
-    network_mode: "host"
     cap_add:
       - NET_ADMIN
+    container_name: pihole
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+    env_file: .env
+    environment:
+      PIHOLE_DNS: 8.8.8.8,1.1.1.1
+    image: pihole/pihole:latest
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pihole.rule=Host(`stargate.${DOMAIN}`)
+      - traefik.http.routers.pihole.tls=true
+      - traefik.http.routers.pihole.entrypoints=websecure
+      - traefik.http.services.pihole.loadbalancer.server.port=80
+    networks:
+      - traefik
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "67:67/udp"
+      - "8080:80/tcp"
+      - "547:547/udp"
+      - "4711:4711/tcp"
+    restart: "always"
     volumes:
       - ./etc/pihole:/etc/pihole
       - ./etc/dnsmasq.d:/etc/dnsmasq.d
+  traefik:
+    command:
+      - --api.dashboard=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.certResolver=letsencrypt
+      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}
+      - --log.level=DEBUG
+      - --providers.docker.exposedbydefault=true
+      - --providers.docker=true
+      - --serverstransport.insecureskipverify=true
+    container_name: traefik
+    env_file: .env
+    image: traefik:latest
+    networks:
+      - traefik
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    volumes:
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+  watchtower:
+    container_name: watchtower
+    env_file: .env
+    environment:
+      WATCHTOWER_SCHEDULE: "0 0 1 * * *"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_DEBUG: "true"
+    image: containrrr/watchtower
+    networks:
+      - traefik
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+networks:
+  traefik:
+    driver: bridge
+    ipam:
+      driver: default
+    name: traefik
