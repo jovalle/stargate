@@ -1,9 +1,13 @@
 # Environment file
 .env
 
+# Let's Encrypt
+acme.json
+
 # Pi-hole
 *.bak
 *.db
-setupVars.conf
+*.domains
+*.sha1
 dhcp.leases
-
+setupVars.conf
