@@ -60,6 +60,28 @@ prepare() {
     net-tools \
     rsync \
     vim
+
+  if [[ $(systemctl is-active systemd-resolved) == "active" ]]; then
+    echo -n "Stopping systemd-resolved..."
+    systemctl stop systemd-resolved
+    echo "Done."
+  fi
+
+  if [[ $(systemctl is-enabled systemd-resolved) == "enabled" ]]; then
+    echo -n "Disabling systemd-resolved..."
+    systemctl disable systemd-resolved
+    echo "Done."
+  fi
+
+  if [[ -L /etc/resolv.conf ]]; then
+    echo -n "Overriding resolv.conf symlink..."
+    unlink /etc/resolv.conf
+    cat <<'EOF' > /etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+EOF
+    echo "Done."
+  fi
 }
 
 #
