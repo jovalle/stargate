@@ -7,16 +7,19 @@ Services in `docker-compose.yaml` are currently set to pull environment variable
 
 ```
 # common
+CF_EMAIL="REDACTED"
+CF_TOKEN="REDACTED"
+DOMAIN="example.net"
 PROFILE="--profile internal" # OPTIONAL feature gate
 PGID=1000
 PUID=1000
 TZ="America/New_York"
 
 # cloudflared
-CLOUDFLARED_TOKEN="REDACTED"
+CLOUDFLARED_TOKEN="${CF_TOKEN}"
 
 # cloudflare-ddns
-API_KEY="REDACTED"
+API_KEY="${CF_TOKEN}" # confusing name, must be an API token
 ZONE="example.net"
 SUBDOMAIN="*"
 PROXIED=true
@@ -25,10 +28,9 @@ PROXIED=true
 WEBPASSWORD="REDACTED"
 
 # traefik
-DOMAIN="example.net"
-CLOUDFLARE_DNS_API_TOKEN="REDACTED"
-CLOUDFLARE_EMAIL="REDACTED"
-TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL="REDACTED"
+CLOUDFLARE_DNS_API_TOKEN="${CF_TOKEN}"
+CLOUDFLARE_EMAIL="${CF_EMAIL}"
+TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL="${CF_EMAIL}"
 VIRTUAL_HOST="stargate.${DOMAIN}"
 ```
 
