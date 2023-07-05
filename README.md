@@ -16,12 +16,12 @@ PUID=1000
 TZ="America/New_York"
 
 # cloudflared
-CLOUDFLARED_TOKEN="${CF_TOKEN}"
+CLOUDFLARED_TOKEN="REDACTED" # tunnel specific token
 
 # cloudflare-ddns
 API_KEY="${CF_TOKEN}" # confusing name, must be an API token
-ZONE="example.net"
-SUBDOMAIN="*"
+ZONE="${DOMAIN}"
+SUBDOMAIN="stargate"
 PROXIED=true
 
 # pi-hole
