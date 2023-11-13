@@ -99,3 +99,19 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+  wireguard:
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    container_name: wireguard
+    env_file: .env
+    image: weejewel/wg-easy
+    ports:
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    restart: unless-stopped
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    volumes:
+      - ./etc/wireguard:/etc/wireguard
