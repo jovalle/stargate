@@ -1,4 +1,10 @@
 version: "3.8"
+networks:
+  default: {}
+  backend:
+    ipam:
+      config:
+        - subnet: 172.52.0.0/16
 services:
   cloudflared:
     command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
@@ -6,12 +12,21 @@ services:
     env_file: .env
     image: cloudflare/cloudflared:latest
     profiles: ['internal']
-    restart: "unless-stopped"
+    restart: unless-stopped
+  dhcphelper:
+    cap_add:
+      - NET_ADMIN
+    container_name: dhcphelper
+    environment:
+      - IP=172.52.0.10
+    image: homeall/dhcphelper:latest
+    network_mode: host
+    restart: unless-stopped
   ddns:
     container_name: ddns
     env_file: .env
     image: oznu/cloudflare-ddns:latest
-    restart: "unless-stopped"
+    restart: unless-stopped
   ntfy:
     command:
       - serve
@@ -24,17 +39,15 @@ services:
       - traefik.http.routers.ntfy.tls=true
       - traefik.http.routers.ntfy.entrypoints=websecure
       - traefik.http.services.ntfy.loadbalancer.server.port=80
-    restart: "unless-stopped"
+    restart: unless-stopped
   pihole:
     cap_add:
       - NET_ADMIN
     container_name: pihole
-    dns:
-      - 127.0.0.1
-      - 8.8.8.8
+    depends_on:
+      - dhcphelper
+      - traefik
     env_file: .env
-    environment:
-      PIHOLE_DNS: 8.8.8.8,1.1.1.1
     image: pihole/pihole:latest
     labels:
       - traefik.enable=true
@@ -42,16 +55,17 @@ services:
       - traefik.http.routers.pihole.tls=true
       - traefik.http.routers.pihole.entrypoints=websecure
       - traefik.http.services.pihole.loadbalancer.server.port=80
+    networks:
+      default: {}
+      backend:
+        ipv4_address: "172.52.0.10"
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      - "67:67/udp"
-      - "8080:80/tcp"
-      - "547:547/udp"
-      - "4711:4711/tcp"
-    restart: "always"
+    restart: unless-stopped
     volumes:
       - ./etc/pihole:/etc/pihole
+      - ./etc/dnsmasq.d/02-pihole-dhcp.conf:/etc/dnsmasq.d/02-pihole-dhcp.conf:ro
       - ./etc/dnsmasq.d:/etc/dnsmasq.d
   traefik:
     command:
@@ -84,7 +98,9 @@ services:
     ports:
       - 80:80
       - 443:443
-    restart: always
+    networks:
+      default: {}
+    restart: unless-stopped
     volumes:
       - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
@@ -96,7 +112,7 @@ services:
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_DEBUG: "true"
     image: containrrr/watchtower
-    restart: always
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   wireguard:
@@ -109,6 +125,7 @@ services:
     ports:
       - "51820:51820/udp"
       - "51821:51821/tcp"
+    profiles: ['vpn']
     restart: unless-stopped
     sysctls:
       - net.ipv4.ip_forward=1

@@ -6,14 +6,16 @@ Provides a warp link strong enough to call ships to a planet's surface
 Services in `docker-compose.yaml` are currently set to pull environment variables from .env. This file is not included in the repo due to the sensitive nature of certain variables. An example of what you may find:
 
 ```
-# common
+# Common
 CF_EMAIL="REDACTED"
 CF_TOKEN="REDACTED"
 DOMAIN="example.net"
-PROFILE="--profile internal" # OPTIONAL feature gate
 PGID=1000
 PUID=1000
 TZ="America/New_York"
+
+# Feature gates
+PROFILE="--profile internal"
 
 # cloudflared
 CLOUDFLARED_TOKEN="REDACTED" # tunnel specific token
