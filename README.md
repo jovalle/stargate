@@ -15,13 +15,13 @@ PUID=1000
 TZ="America/New_York"
 
 # Feature gates
-PROFILE="--profile internal"
+PROFILE="--profile internal --profile vpn"
 
 # cloudflared
-CLOUDFLARED_TOKEN="REDACTED" # tunnel specific token
+CLOUDFLARED_TOKEN="REDACTED"
 
 # cloudflare-ddns
-API_KEY="${CF_TOKEN}" # confusing name, must be an API token
+API_KEY="${CF_TOKEN}"
 ZONE="${DOMAIN}"
 SUBDOMAIN="stargate"
 PROXIED=true
