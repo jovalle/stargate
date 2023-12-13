@@ -3,6 +3,7 @@
 
 # Let's Encrypt
 acme.json
+letsencrypt/
 
 # Pi-hole
 *.bak
@@ -11,3 +12,6 @@ acme.json
 *.sha1
 dhcp.leases
 setupVars.conf
+
+# nginx-proxy-manager
+data/

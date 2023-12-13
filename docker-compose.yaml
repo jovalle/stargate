@@ -27,6 +27,18 @@ services:
     env_file: .env
     image: oznu/cloudflare-ddns:latest
     restart: unless-stopped
+  nginx-proxy-manager:
+    container_name: nginx-proxy-manager
+    image: jc21/nginx-proxy-manager:latest
+    ports:
+      - 8080:80
+      - 8081:81
+      - 8443:443
+    profiles: ['internal']
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
   ntfy:
     command:
       - serve
@@ -62,6 +74,7 @@ services:
     ports:
       - "53:53/tcp"
       - "53:53/udp"
+      - 4080:80
     restart: unless-stopped
     volumes:
       - ./etc/pihole:/etc/pihole
