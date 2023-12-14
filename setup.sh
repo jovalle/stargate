@@ -81,6 +81,12 @@ nameserver 8.8.8.8
 nameserver 1.1.1.1
 EOF
     echo "Done."
+    echo -n "Setting resolv.conf immutability..."
+    lsattr /etc/resolv.conf | awk '{print $1}' | grep i
+    if [[ $? -ne 0 ]]; then
+      chattr +i /etc/resolv.conf
+    fi
+    echo "Done."
   fi
 }
 
