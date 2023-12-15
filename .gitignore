@@ -17,4 +17,6 @@ setupVars.conf
 data/
 
 # github
+_actions
+_PipelineMapping
 actions-runner
