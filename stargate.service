@@ -9,8 +9,8 @@ After=docker.service
 Type=simple
 Restart=always
 RestartSec=5
-WorkingDirectory=/etc/stargate
-EnvironmentFile=/etc/stargate/.env
+WorkingDirectory=/var/lib/stargate
+EnvironmentFile=/var/lib/stargate/.env
 ExecReload=/usr/bin/docker-compose $PROFILE stop \
   /usr/bin/docker-compose $PROFILE pull \
   /usr/bin/docker-compose $PROFILE up -d

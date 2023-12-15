@@ -61,17 +61,7 @@ prepare() {
     rsync \
     vim
 
-  if [[ $(systemctl is-active systemd-resolved) == "active" ]]; then
-    echo -n "Stopping systemd-resolved..."
-    systemctl stop systemd-resolved
-    echo "Done."
-  fi
-
-  if [[ $(systemctl is-enabled systemd-resolved) == "enabled" ]]; then
-    echo -n "Disabling systemd-resolved..."
-    systemctl disable systemd-resolved
-    echo "Done."
-  fi
+  [[ $(systemctl list-unit-files systemd-resolved &>/dev/null) ]] && systemctl stop systemd-resolved && systemctl disable systemd-resolved
 
   if [[ -L /etc/resolv.conf ]]; then
     echo -n "Overriding resolv.conf symlink..."
@@ -95,11 +85,13 @@ EOF
 #
 
 deploy() {
-  test -d /etc/stargate || abort "jovalle/stargate must reside in /etc/stargate"
+  pwd | grep /var/lib/stargate
+  if [[ $? -ne 0 ]]; then
+    abort "jovalle/stargate must reside in /var/lib/stargate"
+  fi
 
   if [[ ! -f /etc/systemd/system/stargate.service ]]; then
-    ln -s /etc/stargate/stargate.service /etc/systemd/system/stargate.service
-    popd
+    ln -s /var/lib/stargate/stargate.service /etc/systemd/system/stargate.service
   fi
 
   test -f /etc/systemd/system/stargate.service && systemctl daemon-reload || abort "stargate.service not found"
