@@ -85,13 +85,15 @@ EOF
 #
 
 deploy() {
-  pwd | grep /var/lib/stargate
+  [[ -n ${APP_DIR} ]] || export APP_DIR=/var/lib/stargate
+
+  pwd | grep ${APP_DIR}
   if [[ $? -ne 0 ]]; then
-    abort "jovalle/stargate must reside in /var/lib/stargate"
+    abort "jovalle/stargate must reside in ${APP_DIR}"
   fi
 
   if [[ ! -f /etc/systemd/system/stargate.service ]]; then
-    ln -s /var/lib/stargate/stargate.service /etc/systemd/system/stargate.service
+    ln -s ${APP_DIR}/stargate.service /etc/systemd/system/stargate.service
   fi
 
   test -f /etc/systemd/system/stargate.service && systemctl daemon-reload || abort "stargate.service not found"
