@@ -15,3 +15,6 @@ setupVars.conf
 
 # nginx-proxy-manager
 data/
+
+# github
+actions-runner
