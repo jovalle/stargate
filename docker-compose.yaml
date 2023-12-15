@@ -134,7 +134,16 @@ services:
       - SYS_MODULE
     container_name: wireguard
     env_file: .env
+    environment:
+      PASSWORD: "${WEBPASSWORD}"
+      WG_HOST: "wireguard.stargate.${DOMAIN}"
     image: weejewel/wg-easy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wireguard.rule=Host(`wireguard.stargate.${DOMAIN}`)
+      - traefik.http.routers.wireguard.tls=true
+      - traefik.http.routers.wireguard.entrypoints=websecure
+      - traefik.http.services.wireguard.loadbalancer.server.port=51821
     ports:
       - "51820:51820/udp"
       - "51821:51821/tcp"
