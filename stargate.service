@@ -11,11 +11,11 @@ Restart=always
 RestartSec=5
 WorkingDirectory=/var/lib/stargate
 EnvironmentFile=/var/lib/stargate/.env
-ExecReload=/usr/bin/docker-compose $PROFILE stop \
-  /usr/bin/docker-compose $PROFILE pull \
-  /usr/bin/docker-compose $PROFILE up -d
-ExecStart=/usr/bin/docker-compose $PROFILE up
-ExecStop=/usr/bin/docker-compose $PROFILE down -v
+ExecReload=/usr/bin/docker-compose $EXTRA_ARGS stop \
+  /usr/bin/docker-compose $EXTRA_ARGS pull \
+  /usr/bin/docker-compose $EXTRA_ARGS up -d $EXTRA_UP_ARGS
+ExecStart=/usr/bin/docker-compose $EXTRA_ARGS up $EXTRA_UP_ARGS
+ExecStop=/usr/bin/docker-compose $EXTRA_ARGS down -v
 
 [Install]
 WantedBy=multi-user.target

@@ -14,8 +14,9 @@ PGID=1000
 PUID=1000
 TZ="America/New_York"
 
-# Feature gates
-PROFILE="--profile internal --profile vpn"
+# docker-compose
+EXTRA_ARGS="--profile external --profile local"
+EXTRA_UP_ARGS="--remove-orphans"
 
 # cloudflared
 CLOUDFLARED_TOKEN="REDACTED"
