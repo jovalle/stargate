@@ -1,6 +1,9 @@
 # Environment file
 .env
 
+# vim
+*.swp
+
 # Let's Encrypt
 acme.json
 letsencrypt/

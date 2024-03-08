@@ -43,22 +43,7 @@ For auto-restarting systemd unit and underlying docker containers when a change 
 
 ```bash
 # See https://github.com/jovalle/stargate/settings/actions/runners/new?arch=x64&os=linux
-echo -n "Deploying actions runner..."
-
-[[ -d ${APP_DIR}/actions-runner ]] || mkdir ${APP_DIR}/actions-runner
-j
-if [[ $(lscpu | grep -i architecture) == *aarch64* ]]; then
-  export ARCH=arm64
-else
-  export ARCH=x64
-fi
-
-pushd ${APP_DIR}/actions-runner
-curl -o actions-runner-linux-${ARCH}-2.311.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.311.0/actions-runner-linux-${ARCH}-2.311.0.tar.gz
-tar xzf ./actions-runner-linux-${ARCH}-2.311.0.tar.gz
-./config.sh --url https://github.com/jovalle/stargate --token REDACTED
-./svc.sh install
-popd
+bash actions-runner.sh
 ```
 
 ## Considerations
