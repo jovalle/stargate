@@ -9,6 +9,8 @@
 
 VERSION="v1"
 
+[[ -n ${APP_DIR} ]] || export APP_DIR=/var/lib/stargate
+
 #
 # Output usage information
 #
@@ -23,6 +25,7 @@ usage() {
     prepare              install required packages
     deploy               create and start service
     delete               stop and disable service
+    update               deploy changes from docker-compose.yaml
 EOF
 }
 
@@ -85,7 +88,6 @@ EOF
 #
 
 deploy() {
-  [[ -n ${APP_DIR} ]] || export APP_DIR=/var/lib/stargate
 
   pwd | grep ${APP_DIR}
   if [[ $? -ne 0 ]]; then
@@ -120,6 +122,19 @@ delete() {
 }
 
 #
+# Update only altered services
+#
+
+update() {
+  pushd $APP_DIR
+  if [[ -f $APP_DIR/.env ]]; then
+    source $APP_DIR/.env
+  fi
+  /usr/bin/docker-compose $EXTRA_ARGS up -d $EXTRA_UP_ARGS
+  popd
+}
+
+#
 # Parse argv
 #
 
@@ -132,6 +147,7 @@ while test $# -ne 0; do
     prepare) prepare; ;;
     deploy) deploy; ;;
     delete) delete; ;;
+    update) update; ;;
     *) usage; exit ;;
   esac
 done
