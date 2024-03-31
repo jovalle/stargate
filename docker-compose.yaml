@@ -92,6 +92,21 @@ services:
       - ./etc/pihole:/etc/pihole
       - ./etc/dnsmasq.d/02-pihole-dhcp.conf:/etc/dnsmasq.d/02-pihole-dhcp.conf:ro
       - ./etc/dnsmasq.d:/etc/dnsmasq.d
+  portainer:
+    command: -H unix:///var/run/docker.sock
+    container_name: portainer
+    env_file: .env
+    image: portainer/portainer-ce
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+    profiles: ['local']
+    ports:
+      - 9000:9000
+    volumes:
+      - ./config/portainer/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
   traefik:
     command:
       - --api.dashboard=true
