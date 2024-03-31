@@ -14,9 +14,9 @@ PGID=1000
 PUID=1000
 TZ="America/New_York"
 
-# docker-compose
-EXTRA_ARGS="--profile external --profile local"
-EXTRA_UP_ARGS="--remove-orphans"
+# docker-compose (no double quotes to avoid formatting issues with `make`)
+EXTRA_ARGS=--profile external --profile local
+EXTRA_UP_ARGS=--remove-orphans
 
 # cloudflared
 CLOUDFLARED_TOKEN="REDACTED"
