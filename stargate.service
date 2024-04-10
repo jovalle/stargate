@@ -11,10 +11,9 @@ Restart=always
 RestartSec=5
 WorkingDirectory=/var/lib/stargate
 EnvironmentFile=/var/lib/stargate/.env
-ExecReload=/usr/bin/docker-compose $EXTRA_ARGS stop \
-  /usr/bin/docker-compose $EXTRA_ARGS pull \
-  /usr/bin/docker-compose $EXTRA_ARGS up -d $EXTRA_UP_ARGS
+ExecStartPre=/usr/bin/docker-compose $EXTRA_ARGS pull
 ExecStart=/usr/bin/docker-compose $EXTRA_ARGS up $EXTRA_UP_ARGS
+ExecReload=/usr/bin/docker-compose $EXTRA_ARGS up -d $EXTRA_UP_ARGS
 ExecStop=/usr/bin/docker-compose $EXTRA_ARGS down -v
 
 [Install]

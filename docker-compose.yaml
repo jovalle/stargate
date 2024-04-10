@@ -1,4 +1,3 @@
-version: "3.8"
 networks:
   default: {}
   backend:
@@ -49,8 +48,8 @@ services:
     profiles: ['external']
     restart: unless-stopped
     volumes:
-      - ./data:/data
-      - ./letsencrypt:/etc/letsencrypt
+      - ./app/nginx-proxy-manager/data:/data
+      - ./app/letsencrypt:/etc/letsencrypt
   ntfy:
     command:
       - serve
@@ -89,9 +88,8 @@ services:
       - 4080:80
     restart: unless-stopped
     volumes:
-      - ./etc/pihole:/etc/pihole
-      - ./etc/dnsmasq.d/02-pihole-dhcp.conf:/etc/dnsmasq.d/02-pihole-dhcp.conf:ro
-      - ./etc/dnsmasq.d:/etc/dnsmasq.d
+      - ./app/pihole/pihole:/etc/pihole
+      - ./app/pihole/dnsmasq.d:/etc/dnsmasq.d
   portainer:
     command: -H unix:///var/run/docker.sock
     container_name: portainer
@@ -100,12 +98,14 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
+      - traefik.http.routers.portainer.tls=true
+      - traefik.http.routers.portainer.entrypoints=websecure
       - traefik.http.services.portainer.loadbalancer.server.port=9000
     profiles: ['local']
     ports:
       - 9000:9000
     volumes:
-      - ./config/portainer/data:/data
+      - ./app/portainer:/data
       - /var/run/docker.sock:/var/run/docker.sock
   traefik:
     command:
@@ -142,8 +142,42 @@ services:
       default: {}
     restart: unless-stopped
     volumes:
-      - ./letsencrypt:/letsencrypt
+      - ./app/letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock
+  unifi-db:
+    env_file: .env
+    image: docker.io/mongo:7.0.8
+    container_name: unifi-db
+    volumes:
+      - ./app/unifi-db/db:/data/db
+      - ./app/unifi-db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    restart: unless-stopped
+  unifi-network-application:
+    depends_on:
+      - unifi-db
+    image: lscr.io/linuxserver/unifi-network-application:latest
+    container_name: unifi-network-application
+    env_file: .env
+    volumes:
+      - ./app/unifi-network-application:/config
+    ports:
+      - 18443:8443
+      - 3478:3478/udp
+      - 10001:10001/udp
+      - 18080:8080
+      - 1900:1900/udp #optional
+      - 18843:8843 #optional
+      - 18880:8880 #optional
+      - 6789:6789 #optional
+      - 5514:5514/udp #optional
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.unifi.rule=Host(`unifi.stargate.${DOMAIN}`)
+      - traefik.http.routers.unifi.tls=true
+      - traefik.http.routers.unifi.entrypoints=websecure
+      - traefik.http.services.unifi.loadbalancer.server.port=8443
+      - traefik.http.services.unifi.loadbalancer.server.scheme=https
   watchtower:
     container_name: watchtower
     env_file: .env
@@ -180,4 +214,4 @@ services:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
     volumes:
-      - ./etc/wireguard:/etc/wireguard
+      - ./app/wireguard:/etc/wireguard

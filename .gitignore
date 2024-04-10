@@ -16,13 +16,14 @@ letsencrypt/
 dhcp.leases
 setupVars.conf
 
-# nginx-proxy-manager
-data/
+# ignore app data
+app/nginx-proxy-manager
+app/portainer
+app/unifi-db
+app/unifi-network-application
+app/wireguard
 
 # github
 _actions
 _PipelineMapping
 actions-runner
-
-# wireguard
-etc/wireguard
