@@ -1,29 +1,20 @@
-# Environment file
-.env
-
-# vim
-*.swp
-
-# Let's Encrypt
-acme.json
-letsencrypt/
-
-# Pi-hole
 *.bak
 *.db
+*.db-shm
+*.db-wal
 *.domains
+*.key
+*.pem
+*.rdb
 *.sha1
-dhcp.leases
-setupVars.conf
-
-# ignore app data
-app/nginx-proxy-manager
-app/portainer
-app/unifi-db
-app/unifi-network-application
-app/wireguard
-
-# github
-_actions
+*.sqlite3
+*.swp
+.env
+.secrets
 _PipelineMapping
-actions-runner
+_actions
+acme.json
+dhcp.leases
+portainer
+prometheus/data
+setupVars.conf

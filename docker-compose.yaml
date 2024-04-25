@@ -4,6 +4,8 @@ networks:
     ipam:
       config:
         - subnet: 172.52.0.0/16
+  WEBPASSWORD:
+    file: '${PWD}/.secrets/WEBPASSWORD'
 services:
   cloudflared:
     command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
@@ -25,6 +27,11 @@ services:
   ddns:
     container_name: ddns
     env_file: .env
+    environment:
+      API_KEY: "${CF_TOKEN}" # confusing name, must be an API token
+      ZONE: "${CF_ZONE}"
+      SUBDOMAIN: "*"
+      PROXIED: "true"
     image: oznu/cloudflare-ddns:latest
     profiles: ['external']
     restart: unless-stopped
@@ -70,6 +77,8 @@ services:
     depends_on:
       - traefik
     env_file: .env
+    environment:
+      WEBPASSWORD_FILE: "/run/secrets/WEBPASSWORD"
     image: pihole/pihole:latest
     labels:
       - traefik.docker.network=backend
@@ -83,66 +92,69 @@ services:
       backend:
         ipv4_address: "172.52.0.10"
     ports:
-      - "53:53/tcp"
-      - "53:53/udp"
-      - 4080:80
+      - 53:53/tcp
+      - 53:53/udp
+      - 81:80
     restart: unless-stopped
+    secrets:
+      - WEBPASSWORD
     volumes:
-      - ./app/pihole/pihole:/etc/pihole
-      - ./app/pihole/dnsmasq.d:/etc/dnsmasq.d
+      - ${PWD}/dnsmasq.d:/etc/dnsmasq.d
+      - ${PWD}/pihole:/etc/pihole
   portainer:
-    command: -H unix:///var/run/docker.sock
+    command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
     container_name: portainer
     env_file: .env
     image: portainer/portainer-ce
     labels:
       - traefik.enable=true
-      - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
-      - traefik.http.routers.portainer.tls=true
       - traefik.http.routers.portainer.entrypoints=websecure
+      - traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)
+      - traefik.http.routers.portainer.tls=true
       - traefik.http.services.portainer.loadbalancer.server.port=9000
-    profiles: ['local']
     ports:
       - 9000:9000
     volumes:
-      - ./app/portainer:/data
+      - ${PWD}/portainer:/data
       - /var/run/docker.sock:/var/run/docker.sock
   traefik:
     command:
       - --api.dashboard=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
-      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.http.tls=true
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN},*.stargate.${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}
+      - --entrypoints.websecure.http.tls=true
       - --log.level=DEBUG
       - --providers.docker.exposedbydefault=true
       - --providers.docker=true
       - --serverstransport.insecureskipverify=true
     container_name: traefik
     env_file: .env
+    environment:
+      CLOUDFLARE_DNS_API_TOKEN: "${CF_TOKEN}"
+      CLOUDFLARE_EMAIL: "${CF_EMAIL}"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: "${CF_EMAIL}"
     image: traefik:latest
     labels:
       - traefik.enable=true
-      - traefik.http.routers.dashboard.rule=Host(`traefik.stargate.${DOMAIN}`)
-      - traefik.http.routers.dashboard.tls=true
       - traefik.http.routers.dashboard.entrypoints=websecure
+      - traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN}`)
       - traefik.http.routers.dashboard.service=api@internal
+      - traefik.http.routers.dashboard.tls=true
     ports:
       - 80:80
       - 443:443
-    networks:
-      default: {}
     restart: unless-stopped
     volumes:
-      - ./app/letsencrypt:/letsencrypt
+      - ${PWD}/traefik/acme.json:/etc/traefik/acme.json
       - /var/run/docker.sock:/var/run/docker.sock
   unifi-db:
     env_file: .env
