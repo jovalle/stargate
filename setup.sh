@@ -8,8 +8,12 @@
 #
 
 VERSION="v1"
+SERVICES=(
+  glances
+  stargate
+)
 
-[[ -n ${APP_DIR} ]] || export APP_DIR=/var/lib/stargate
+[[ -n ${APP_DIR} ]] || export APP_DIR=/etc/stargate
 
 #
 # Output usage information
@@ -56,11 +60,15 @@ prepare() {
   apt update
   apt upgrade -y
   apt install -y \
+    btop \
     curl \
     dnsutils \
     docker \
     docker-compose \
+    glances \
     net-tools \
+    python3 \
+    python3-bottle \
     rsync \
     vim
 
@@ -94,21 +102,23 @@ deploy() {
     abort "jovalle/stargate must reside in ${APP_DIR}"
   fi
 
-  if [[ ! -f /etc/systemd/system/stargate.service ]]; then
-    ln -s ${APP_DIR}/stargate.service /etc/systemd/system/stargate.service
-  fi
+  for svc in ${SERVICES[@]}; do
+    if [[ ! -f /etc/systemd/system/${svc}.service ]]; then
+      ln -sf ${APP_DIR}/${svc}.service /etc/systemd/system/${svc}.service
+    fi
 
-  test -f /etc/systemd/system/stargate.service && systemctl daemon-reload || abort "stargate.service not found"
+    test -f /etc/systemd/system/${svc}.service && systemctl daemon-reload || abort "${svc}.service not found"
 
-  systemctl status stargate &>/dev/null
-  if [[ $? -ne 0 ]]; then
-    echo "Stargate is NOT running. Restarting service..."
-    systemctl restart stargate
-  else
-    echo "Stargate is running"
-  fi
+    systemctl status ${svc} &>/dev/null
+    if [[ $? -ne 0 ]]; then
+      echo "${svc}.service is NOT running. Restarting service..."
+      systemctl restart ${svc}
+    else
+      echo "${svc}.service is running"
+    fi
 
-  systemctl enable stargate
+    systemctl enable ${svc}
+  done
 }
 
 #
@@ -116,9 +126,11 @@ deploy() {
 #
 
 delete() {
-  systemctl stop stargate
-  systemctl disable stargate
-  test -f /etc/systemd/system/stargate.service && rm -f /etc/systemd/system/stargate.service
+  for svc in ${SERVICES[@]}; do
+    systemctl stop ${svc}
+    systemctl disable ${svc}
+    test -f /etc/systemd/system/${svc}.service && rm -f /etc/systemd/system/${svc}.service
+  done
 }
 
 #
@@ -130,7 +142,7 @@ update() {
   if [[ -f $APP_DIR/.env ]]; then
     source $APP_DIR/.env
   fi
-  /usr/bin/docker-compose $EXTRA_ARGS up -d $EXTRA_UP_ARGS
+  /usr/bin/docker-compose up -d --remove-orphans
   popd
 }
 
