@@ -18,7 +18,7 @@ services:
       - NET_ADMIN
     container_name: dhcphelper
     environment:
-      - IP=172.52.0.10
+      IP: '172.52.0.10'
     image: homeall/dhcphelper:latest
     network_mode: host
     restart: unless-stopped
@@ -44,6 +44,9 @@ services:
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
     image: jc21/nginx-proxy-manager:latest
+    networks:
+      default: {}
+      backend: {}
     ports:
       - 8080:80
       - 8081:81
@@ -69,13 +72,16 @@ services:
       - NET_ADMIN
     container_name: pihole
     depends_on:
+      - dhcphelper
       - traefik
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     env_file: .env
     environment:
       WEBPASSWORD_FILE: "/run/secrets/WEBPASSWORD"
     image: pihole/pihole:latest
     labels:
-      - traefik.docker.network=backend
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
       - traefik.http.routers.pihole.rule=Host(`pihole.${DOMAIN}`)
@@ -98,6 +104,8 @@ services:
   portainer:
     command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
     container_name: portainer
+    depends_on:
+      - traefik
     env_file: .env
     image: portainer/portainer-ce
     labels:
@@ -143,6 +151,9 @@ services:
       - traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN}`)
       - traefik.http.routers.dashboard.service=api@internal
       - traefik.http.routers.dashboard.tls=true
+    networks:
+      default: {}
+      backend: {}
     ports:
       - 80:80
       - 443:443
@@ -153,6 +164,7 @@ services:
   uptime-kuma:
     container_name: uptime-kuma
     depends_on:
+      - traefik
     image: louislam/uptime-kuma:1
     labels:
       - traefik.enable=true
