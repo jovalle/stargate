@@ -3,7 +3,9 @@
 *.db-shm
 *.db-wal
 *.domains
+*.gsb
 *.key
+*.log
 *.pem
 *.rdb
 *.sha1
@@ -15,6 +17,7 @@ _PipelineMapping
 _actions
 acme.json
 dhcp.leases
+letsencrypt
+nginx-proxy-manager
 portainer
-prometheus/data
 setupVars.conf
