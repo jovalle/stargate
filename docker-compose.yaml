@@ -12,7 +12,6 @@ services:
     container_name: cloudflared
     env_file: .env
     image: cloudflare/cloudflared:latest
-    profiles: ['external']
     restart: unless-stopped
   dhcphelper:
     cap_add:
@@ -22,7 +21,6 @@ services:
       - IP=172.52.0.10
     image: homeall/dhcphelper:latest
     network_mode: host
-    profiles: ['local']
     restart: unless-stopped
   ddns:
     container_name: ddns
@@ -33,7 +31,6 @@ services:
       SUBDOMAIN: "*"
       PROXIED: "true"
     image: oznu/cloudflare-ddns:latest
-    profiles: ['external']
     restart: unless-stopped
   flaresolverr:
     container_name: flaresolverr
@@ -43,7 +40,6 @@ services:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     ports:
       - 8191:8191
-    profiles: ['local']
     restart: unless-stopped
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
@@ -52,7 +48,6 @@ services:
       - 8080:80
       - 8081:81
       - 8443:443
-    profiles: ['external']
     restart: unless-stopped
     volumes:
       - /etc/stargate/nginx-proxy-manager:/data
@@ -69,7 +64,6 @@ services:
       - traefik.http.routers.ntfy.tls=true
       - traefik.http.routers.ntfy.entrypoints=websecure
       - traefik.http.services.ntfy.loadbalancer.server.port=80
-    restart: unless-stopped
   pihole:
     cap_add:
       - NET_ADMIN
