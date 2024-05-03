@@ -4,8 +4,9 @@ networks:
     ipam:
       config:
         - subnet: 172.52.0.0/16
+secrets:
   WEBPASSWORD:
-    file: '${PWD}/.secrets/WEBPASSWORD'
+    file: '/etc/stargate/.secrets/WEBPASSWORD'
 services:
   cloudflared:
     command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
@@ -55,8 +56,8 @@ services:
     profiles: ['external']
     restart: unless-stopped
     volumes:
-      - ./app/nginx-proxy-manager/data:/data
-      - ./app/letsencrypt:/etc/letsencrypt
+      - /etc/stargate/nginx-proxy-manager:/data
+      - /etc/stargate/letsencrypt:/etc/letsencrypt
   ntfy:
     command:
       - serve
@@ -65,7 +66,7 @@ services:
     image: binwiederhier/ntfy:latest
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ntfy.rule=Host(`ntfy.stargate.${DOMAIN}`)
+      - traefik.http.routers.ntfy.rule=Host(`ntfy.${DOMAIN}`)
       - traefik.http.routers.ntfy.tls=true
       - traefik.http.routers.ntfy.entrypoints=websecure
       - traefik.http.services.ntfy.loadbalancer.server.port=80
@@ -99,8 +100,8 @@ services:
     secrets:
       - WEBPASSWORD
     volumes:
-      - ${PWD}/dnsmasq.d:/etc/dnsmasq.d
-      - ${PWD}/pihole:/etc/pihole
+      - /etc/stargate/dnsmasq.d:/etc/dnsmasq.d
+      - /etc/stargate/pihole:/etc/pihole
   portainer:
     command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
     container_name: portainer
@@ -115,7 +116,7 @@ services:
     ports:
       - 9000:9000
     volumes:
-      - ${PWD}/portainer:/data
+      - /etc/stargate/portainer:/data
       - /var/run/docker.sock:/var/run/docker.sock
   traefik:
     command:
@@ -154,7 +155,7 @@ services:
       - 443:443
     restart: unless-stopped
     volumes:
-      - ${PWD}/traefik/acme.json:/etc/traefik/acme.json
+      - /etc/stargate/letsencrypt/acme.json:/etc/traefik/acme.json
       - /var/run/docker.sock:/var/run/docker.sock
   unifi-db:
     env_file: .env
@@ -185,11 +186,7 @@ services:
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.http.routers.unifi.rule=Host(`unifi.stargate.${DOMAIN}`)
-      - traefik.http.routers.unifi.tls=true
-      - traefik.http.routers.unifi.entrypoints=websecure
-      - traefik.http.services.unifi.loadbalancer.server.port=8443
-      - traefik.http.services.unifi.loadbalancer.server.scheme=https
+      - /etc/stargate/uptime-kuma:/app/data
   watchtower:
     container_name: watchtower
     env_file: .env
