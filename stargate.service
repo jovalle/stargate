@@ -9,6 +9,7 @@ After=docker.service
 Type=simple
 Restart=no
 RestartSec=5
+TimeoutStartSec=600
 WorkingDirectory=/etc/stargate
 EnvironmentFile=/etc/stargate/.env
 ExecStartPre=/usr/bin/docker-compose pull
