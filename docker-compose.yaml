@@ -1,5 +1,4 @@
 networks:
-  default: {}
   backend:
     ipam:
       config:
@@ -157,35 +156,20 @@ services:
     volumes:
       - /etc/stargate/letsencrypt/acme.json:/etc/traefik/acme.json
       - /var/run/docker.sock:/var/run/docker.sock
-  unifi-db:
-    env_file: .env
-    image: docker.io/mongo:7.0.8
-    container_name: unifi-db
-    volumes:
-      - ./app/unifi-db/db:/data/db
-      - ./app/unifi-db/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-    restart: unless-stopped
-  unifi-network-application:
+  uptime-kuma:
+    container_name: uptime-kuma
     depends_on:
-      - unifi-db
-    image: lscr.io/linuxserver/unifi-network-application:latest
-    container_name: unifi-network-application
-    env_file: .env
-    volumes:
-      - ./app/unifi-network-application:/config
-    ports:
-      - 18443:8443
-      - 3478:3478/udp
-      - 10001:10001/udp
-      - 18080:8080
-      - 1900:1900/udp #optional
-      - 18843:8843 #optional
-      - 18880:8880 #optional
-      - 6789:6789 #optional
-      - 5514:5514/udp #optional
-    restart: unless-stopped
+    image: louislam/uptime-kuma:1
     labels:
       - traefik.enable=true
+      - traefik.http.routers.uptime-kuma.entrypoints=websecure
+      - traefik.http.routers.uptime-kuma.rule=Host(`status.${DOMAIN}`)
+      - traefik.http.routers.uptime-kuma.tls=true
+      - traefik.http.services.uptime-kuma.loadbalancer.server.port=3001
+    ports:
+      - 3001:3001
+    restart: unless-stopped
+    volumes:
       - /etc/stargate/uptime-kuma:/app/data
   watchtower:
     container_name: watchtower
@@ -198,29 +182,3 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  wireguard:
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    container_name: wireguard
-    env_file: .env
-    environment:
-      PASSWORD: "${WEBPASSWORD}"
-      WG_HOST: "wireguard.stargate.${DOMAIN}"
-    image: weejewel/wg-easy
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.wireguard.rule=Host(`wireguard.stargate.${DOMAIN}`)
-      - traefik.http.routers.wireguard.tls=true
-      - traefik.http.routers.wireguard.entrypoints=websecure
-      - traefik.http.services.wireguard.loadbalancer.server.port=51821
-    ports:
-      - "51820:51820/udp"
-      - "51821:51821/tcp"
-    profiles: ['external']
-    restart: unless-stopped
-    sysctls:
-      - net.ipv4.ip_forward=1
-      - net.ipv4.conf.all.src_valid_mark=1
-    volumes:
-      - ./app/wireguard:/etc/wireguard
