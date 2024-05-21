@@ -17,6 +17,7 @@ _PipelineMapping
 _actions
 acme.json
 dhcp.leases
+gravity.db_temp*
 letsencrypt
 nginx-proxy-manager
 portainer
