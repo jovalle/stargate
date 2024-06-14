@@ -5,7 +5,7 @@ networks:
         - subnet: 172.52.0.0/16
 secrets:
   WEBPASSWORD:
-    file: '/etc/stargate/.secrets/WEBPASSWORD'
+    file: '/etc/stargate/docker/.secrets/WEBPASSWORD'
 services:
   cloudflared:
     command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
@@ -32,49 +32,28 @@ services:
       PROXIED: "true"
     image: oznu/cloudflare-ddns:latest
     restart: unless-stopped
-  flaresolverr:
-    container_name: flaresolverr
-    env_file: .env
+  docker-socket-proxy:
+    container_name: proxy
     environment:
-      - LOG_LEVEL=info
-    image: ghcr.io/flaresolverr/flaresolverr:latest
+      - CONTAINERS=1
+      - POST=0
+      - SERVICES=1
+      - TASKS=1
+    image: ghcr.io/tecnativa/docker-socket-proxy
     ports:
-      - 8191:8191
-    restart: unless-stopped
-  nginx-proxy-manager:
-    container_name: nginx-proxy-manager
-    depends_on:
-      - traefik
-    image: jc21/nginx-proxy-manager:latest
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.nginx-proxy-manager.rule=Host(`nginx-proxy-manager.${DOMAIN}`)
-      - traefik.http.routers.nginx-proxy-manager.tls=true
-      - traefik.http.routers.nginx-proxy-manager.entrypoints=websecure
-      - traefik.http.services.nginx-proxy-manager.loadbalancer.server.port=81
-    networks:
-      default: {}
-      backend: {}
-    ports:
-      - 8080:80
-      - 8081:81
-      - 8443:443
+      - 0.0.0.0:2375:2375
     restart: unless-stopped
     volumes:
-      - /etc/stargate/nginx-proxy-manager:/data
-      - /etc/stargate/letsencrypt:/etc/letsencrypt
-  ntfy:
-    command:
-      - serve
-    container_name: ntfy
-    env_file: .env
-    image: binwiederhier/ntfy:latest
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.ntfy.rule=Host(`ntfy.${DOMAIN}`)
-      - traefik.http.routers.ntfy.tls=true
-      - traefik.http.routers.ntfy.entrypoints=websecure
-      - traefik.http.services.ntfy.loadbalancer.server.port=80
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  node-exporter:
+    command: --path.rootfs=/host
+    container_name: node-exporter
+    image: quay.io/prometheus/node-exporter
+    ports:
+      - 9100:9100
+    restart: unless-stopped
+    volumes:
+      - /:/host:ro,rslave
   pihole:
     cap_add:
       - NET_ADMIN
@@ -88,13 +67,24 @@ services:
     env_file: .env
     environment:
       WEBPASSWORD_FILE: "/run/secrets/WEBPASSWORD"
+    hostname: pihole
     image: pihole/pihole:latest
     labels:
+      - homepage.group=Stargate
+      - homepage.name=PiHole
+      - homepage.icon=pi-hole
+      - homepage.href=https://stargate.${DOMAIN}/admin
+      - homepage.description=DNS Ad-Blocking and DHCP server
+      - homepage.widget.type=pihole
+      - homepage.widget.url=http://stargate:81
+      - homepage.widget.version=6
+      - homepage.widget.key=${PIHOLE_API_KEY}
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
-      - traefik.http.routers.pihole.rule=Host(`pihole.${DOMAIN}`)
+      - traefik.http.routers.pihole.rule=host(`stargate.${DOMAIN}`)
       - traefik.http.routers.pihole.tls=true
       - traefik.http.services.pihole.loadbalancer.server.port=80
+      - traefik.http.services.pihole.loadbalancer.server.url=http://127.0.0.1:81
     networks:
       default: {}
       backend:
@@ -107,8 +97,8 @@ services:
     secrets:
       - WEBPASSWORD
     volumes:
-      - /etc/stargate/dnsmasq.d:/etc/dnsmasq.d
-      - /etc/stargate/pihole:/etc/pihole
+      - /etc/stargate/docker/dnsmasq.d:/etc/dnsmasq.d
+      - /etc/stargate/docker/pihole:/etc/pihole
   portainer:
     command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
     container_name: portainer
@@ -117,21 +107,32 @@ services:
     env_file: .env
     image: portainer/portainer-ce
     labels:
+      - homepage.group=Stargate
+      - homepage.name=Portainer
+      - homepage.icon=portainer
+      - homepage.href=https://portainer.stargate.${DOMAIN}
+      - homepage.description=Container management
+      - homepage.widget.type=portainer
+      - homepage.widget.env=1
+      - homepage.widget.url=http://stargate:9000
+      - homepage.widget.key=${PORTAINER_API_KEY}
+      - homepage.widget.fields=["running", "stopped", "total"]
       - traefik.enable=true
       - traefik.http.routers.portainer.entrypoints=websecure
-      - traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)
+      - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
       - traefik.http.routers.portainer.tls=true
       - traefik.http.services.portainer.loadbalancer.server.port=9000
     ports:
       - 9000:9000
     volumes:
-      - /etc/stargate/portainer:/data
+      - /etc/stargate/docker/portainer:/data
       - /var/run/docker.sock:/var/run/docker.sock
   traefik:
     command:
       - --api.dashboard=true
+      - --api.insecure=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json
       - --entrypoints.web.address=:80
@@ -140,7 +141,7 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN},*.${DOMAIN}
       - --entrypoints.websecure.http.tls=true
       - --log.level=DEBUG
       - --providers.docker.exposedbydefault=true
@@ -152,11 +153,20 @@ services:
       CLOUDFLARE_DNS_API_TOKEN: "${CF_TOKEN}"
       CLOUDFLARE_EMAIL: "${CF_EMAIL}"
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: "${CF_EMAIL}"
-    image: traefik:latest
+    extra_hosts:
+      - host.docker.internal:172.17.0.1
+    image: traefik
     labels:
+      - homepage.group=Stargate
+      - homepage.name=Traefik
+      - homepage.icon=traefik
+      - homepage.href=https://traefik.stargate.${DOMAIN}
+      - homepage.description=Reverse proxy for exposing apps via HTTPS
+      - homepage.widget.type=traefik
+      - homepage.widget.url=http://stargate:8080
       - traefik.enable=true
       - traefik.http.routers.dashboard.entrypoints=websecure
-      - traefik.http.routers.dashboard.rule=Host(`traefik.${DOMAIN}`)
+      - traefik.http.routers.dashboard.rule=Host(`traefik.stargate.${DOMAIN}`)
       - traefik.http.routers.dashboard.service=api@internal
       - traefik.http.routers.dashboard.tls=true
     networks:
@@ -164,17 +174,27 @@ services:
       backend: {}
     ports:
       - 80:80
+      - 8080:8080
       - 443:443
     restart: unless-stopped
     volumes:
-      - /etc/stargate/letsencrypt/acme.json:/etc/traefik/acme.json
+      - /etc/stargate/docker/letsencrypt/acme.json:/etc/traefik/acme.json
       - /var/run/docker.sock:/var/run/docker.sock
   uptime-kuma:
     container_name: uptime-kuma
     depends_on:
       - traefik
+    hostname: uptime-kuma
     image: louislam/uptime-kuma:1
     labels:
+      - homepage.group=Stargate
+      - homepage.name=Uptime Kuma
+      - homepage.icon=uptime-kuma
+      - homepage.href=https://status.${DOMAIN}
+      - homepage.description=Component Health Tracking and Alerting
+      - homepage.widget.type=uptimekuma
+      - homepage.widget.url=http://stargate:3001
+      - homepage.widget.slug=technis
       - traefik.enable=true
       - traefik.http.routers.uptime-kuma.entrypoints=websecure
       - traefik.http.routers.uptime-kuma.rule=Host(`status.${DOMAIN}`)
@@ -184,7 +204,7 @@ services:
       - 3001:3001
     restart: unless-stopped
     volumes:
-      - /etc/stargate/uptime-kuma:/app/data
+      - /etc/stargate/docker/uptime-kuma:/app/data
   watchtower:
     container_name: watchtower
     env_file: .env

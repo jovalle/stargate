@@ -1,5 +1,0 @@
-# domain only inherited by DHCP
-192.168.31.1    warpgate.technis.net
-192.168.31.2    stargate.technis.net
-192.168.31.3    starport.technis.net
-192.168.31.8    k8s.technis.net
