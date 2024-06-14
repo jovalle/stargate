@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./stargate.jpeg" height="400px"/>
+<img src="./stargate.jpg" height="400px"/>
 
 # Stargate
 
