@@ -25,15 +25,30 @@ HELP_FMT = \
 	print "\n"; }
 
 #DEFAULT variables
-ROOT_DIR := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
-DOCKER_COMPOSE := docker-compose
-DOCKER_COMPOSE_FILE := $(ROOT_DIR)/$(DOCKER_COMPOSE).yml
+ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+DOCKER_COMPOSE := docker compose
+DOCKER_COMPOSE_FILE := $(ROOT_DIR)/docker-compose.yaml
+SYSTEMD_UNIT := $(ROOT_DIR)/stargate.service
 EXTRA_UP_ARGS := --remove-orphans
+
+install: ##@other Start and enable service
+	@apt update
+	@apt install -y curl
+	@curl -fsSL https://raw.githubusercontent.com/jovalle/mothership/main/scripts/install-packages.sh | sh
+	@curl -fsSL https://raw.githubusercontent.com/jovalle/mothership/main/scripts/install-docker.sh | sh
+	@ln -sf $(SYSTEMD_UNIT) /etc/systemd/system/stargate.service
+	@systemctl daemon-reload
+	@systemctl start stargate
+	@systemctl enable stargate
+
+uninstall: confirm ##@other Stop and disable service
+	@systemctl stop stargate
+	@systemctl disable stargate
 
 help: ##@other Show this help
 	@perl -e '$(HELP_FMT)' $(MAKEFILE_LIST)
 
-confirm: ##@other Prompt for confirmation
+confirm:
 	@( read -p "$(RED)Are you sure? [y/N]$(RESET): " sure && case "$$sure" in [yY]) true;; *) false;; esac )
 
 up: ## Start all containers in foreground
@@ -61,4 +76,4 @@ status: ## List all containers
 ps: status
 
 clean: confirm ## Delete all containers
-	@$(DOCKER_COMPOSE) down
+	@$(DOCKER_COMPOSE) down -v
