@@ -1,0 +1,6 @@
+# for static IP hosts and more consistent answers on DHCP leases
+10.0.0.2   stargate
+10.0.0.10  watchtower
+10.0.6.1   nexus
+10.0.10.1  core
+10.0.10.10 mothership
