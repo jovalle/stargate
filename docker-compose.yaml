@@ -77,7 +77,6 @@ services:
       - homepage.description=DNS Ad-Blocking and DHCP server
       - homepage.widget.type=pihole
       - homepage.widget.url=http://stargate:81
-      - homepage.widget.version=6
       - homepage.widget.key=${PIHOLE_API_KEY}
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
