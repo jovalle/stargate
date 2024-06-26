@@ -26,3 +26,32 @@ An extention of [Mothership](https://github.com/jovalle/mothership).
 - [Traefik](https://traefik.io): Reverse proxy for serving other components with HTTPS enabled URLs. Using Let's Encrypt for quick and easy HTTPS certificates.
 - [Uptime Kuma](https://github.com/louislam/uptime-kuma): Monitoring dashboard and alerting for internal and external endpoints.
 - [Watchtower](https://containrrr.dev/watchtower/): Keeps an eye on colocated containers and updates them while I'm (hopefully) sleeping.
+
+## 📋 Environment Variables
+
+Docker compose services inherit the following env vars (update yours accordingly):
+
+```sh
+# common
+ADMIN_PASSWORD=""
+ADMIN_PASSWORD_HASH=""
+DOMAIN=""
+PGID=1000
+PUID=1000
+TZ=""
+
+# cloudflare
+CF_EMAIL=""
+CF_TOKEN=""
+CF_ZONE=""
+
+# cloudflared
+CLOUDFLARED_TOKEN=""
+
+# homepage
+PIHOLE_API_KEY=""
+PORTAINER_API_KEY=""
+
+# tailscale
+TS_AUTHKEY=""
+```
