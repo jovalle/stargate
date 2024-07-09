@@ -26,11 +26,12 @@ services:
     container_name: ddns
     env_file: .env
     environment:
-      API_KEY: "${CF_TOKEN}" # confusing name, must be an API token
+      API_KEY: "${CF_TOKEN}"
       ZONE: "${CF_ZONE}"
       SUBDOMAIN: "*"
       PROXIED: "true"
     image: oznu/cloudflare-ddns:latest
+    network_mode: host
     restart: unless-stopped
   docker-socket-proxy:
     container_name: proxy
