@@ -135,7 +135,7 @@ services:
     environment:
         TS_EXTRA_ARGS: '--advertise-exit-node'
         TS_HOSTNAME: stargate
-        TS_ROUTES: 10.0.0.0/16
+        TS_ROUTES: 192.168.31.0/24
         TS_STATE_DIR: /var/lib/tailscale
         TS_USERSPACE: false
     image: tailscale/tailscale:latest
