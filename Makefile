@@ -34,8 +34,8 @@ EXTRA_UP_ARGS := --remove-orphans
 install: ##@other Start and enable service
 	@apt update
 	@apt install -y curl
-	@curl -fsSL https://raw.githubusercontent.com/jovalle/mothership/main/scripts/install-packages.sh | sh
-	@curl -fsSL https://raw.githubusercontent.com/jovalle/mothership/main/scripts/install-docker.sh | sh
+	@bash scripts/install-packages.sh
+	@bash scripts/install-docker.sh
 	@ln -sf $(SYSTEMD_UNIT) /etc/systemd/system/stargate.service
 	@systemctl daemon-reload
 	@systemctl start stargate
