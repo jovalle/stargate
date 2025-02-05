@@ -9,6 +9,7 @@
 *.pem
 *.rdb
 *.sha1
+*.sqlite
 *.sqlite3
 *.swp
 .env
@@ -18,8 +19,10 @@ _actions
 acme.json
 dhcp.leases
 gravity.db_temp*
+keys.json
 letsencrypt
-nginx-proxy-manager
+nginx-proxy-manager/letsencrypt-acme-challenge
+nginx-proxy-manager/logs
 portainer
 sed*
 setupVars.conf
