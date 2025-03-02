@@ -69,7 +69,7 @@ services:
     cap_add:
       - CAP_SYS_NICE # NTP
       - CAP_SYS_TIME # CPU prio
-      - NET_ADMIN    # net conf
+      - NET_ADMIN # net conf
     container_name: pihole
     depends_on:
       - dhcphelper
@@ -119,16 +119,16 @@ services:
     hostname: portainer
     image: portainer/portainer-ce
     labels:
-      - homepage.group=Stargate
-      - homepage.name=Portainer
-      - homepage.icon=portainer
-      - homepage.href=https://portainer.stargate.${DOMAIN}
       - homepage.description=Container management
-      - homepage.widget.type=portainer
+      - homepage.group=Stargate
+      - homepage.href=https://portainer.stargate.${DOMAIN}
+      - homepage.icon=portainer
+      - homepage.name=Portainer
       - homepage.widget.env=1
-      - homepage.widget.url=http://stargate:9000
-      - homepage.widget.key=${PORTAINER_API_KEY}
       - homepage.widget.fields=["running", "stopped", "total"]
+      - homepage.widget.key=${PORTAINER_API_KEY}
+      - homepage.widget.type=portainer
+      - homepage.widget.url=http://stargate:9000
       - traefik.enable=true
       - traefik.http.routers.portainer.entrypoints=websecure
       - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
@@ -187,11 +187,11 @@ services:
     hostname: traefik
     image: traefik
     labels:
-      - homepage.group=Stargate
-      - homepage.name=Traefik
-      - homepage.icon=traefik
-      - homepage.href=https://traefik.stargate.${DOMAIN}
       - homepage.description=Reverse proxy for exposing apps via HTTPS
+      - homepage.group=Stargate
+      - homepage.href=https://traefik.stargate.${DOMAIN}
+      - homepage.icon=traefik
+      - homepage.name=Traefik
       - homepage.widget.type=traefik
       - homepage.widget.url=http://stargate:8888
       - traefik.enable=true
@@ -215,14 +215,14 @@ services:
     hostname: uptime-kuma
     image: louislam/uptime-kuma:1
     labels:
-      - homepage.group=Core
-      - homepage.name=Uptime Kuma
-      - homepage.icon=uptime-kuma
-      - homepage.href=https://status.${DOMAIN}
       - homepage.description=Component Health Tracking and Alerting
+      - homepage.group=Core
+      - homepage.href=https://status.${DOMAIN}
+      - homepage.icon=uptime-kuma
+      - homepage.name=Uptime Kuma
+      - homepage.widget.slug=technis
       - homepage.widget.type=uptimekuma
       - homepage.widget.url=http://stargate:3001
-      - homepage.widget.slug=technis
       - traefik.enable=true
       - traefik.http.routers.uptime-kuma.entrypoints=websecure
       - traefik.http.routers.uptime-kuma.rule=Host(`status.stargate.${DOMAIN}`)
