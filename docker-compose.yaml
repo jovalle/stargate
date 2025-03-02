@@ -152,6 +152,15 @@ services:
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: "false"
     image: tailscale/tailscale:latest
+    labels:
+      - homepage.description=Private WireGuard Network
+      - homepage.group=Core
+      - homepage.href=https://login.tailscale.com/admin/machines
+      - homepage.icon=tailscale
+      - homepage.name=Tailscale
+      - homepage.widget.key=${TS_APIKEY}
+      - homepage.widget.type=tailscale
+      - homepage.widget.deviceid=${TS_DEVID}
     restart: unless-stopped
     volumes:
       - /dev/net/tun:/dev/net/tun
