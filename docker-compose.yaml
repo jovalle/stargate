@@ -85,14 +85,15 @@ services:
     hostname: pihole
     image: pihole/pihole:latest
     labels:
-      - homepage.group=Core
-      - homepage.name=PiHole
-      - homepage.icon=pi-hole
-      - homepage.href=https://stargate.${DOMAIN}/admin
       - homepage.description=DNS Ad-Blocking and DHCP server
+      - homepage.group=Core
+      - homepage.href=https://stargate.${DOMAIN}/admin
+      - homepage.icon=pi-hole
+      - homepage.name=PiHole
+      - homepage.widget.key=${PIHOLE_APP_PASS}
       - homepage.widget.type=pihole
       - homepage.widget.url=http://stargate:8081
-      - homepage.widget.key=${PIHOLE_APP_PASS}
+      - homepage.widget.version=6
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
       - traefik.http.routers.pihole.rule=host(`stargate.${DOMAIN}`)
