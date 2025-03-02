@@ -1,9 +1,11 @@
 *.bak
+*.crt
 *.db
 *.db-shm
 *.db-wal
 *.domains
 *.gsb
+*.gz
 *.key
 *.log
 *.pem
@@ -17,10 +19,14 @@
 _PipelineMapping
 _actions
 acme.json
+cli_pw
+config_backups
 dhcp.leases
+gravity_backups
 gravity.db_temp*
 keys.json
 letsencrypt
+migration_backup
 nginx-proxy-manager/letsencrypt-acme-challenge
 nginx-proxy-manager/logs
 portainer

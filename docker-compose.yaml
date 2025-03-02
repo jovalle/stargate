@@ -3,9 +3,6 @@ networks:
     ipam:
       config:
         - subnet: 172.52.0.0/16
-secrets:
-  WEBPASSWORD:
-    file: '/etc/stargate/docker/.secrets/WEBPASSWORD'
 services:
   cloudflared:
     command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
@@ -70,7 +67,9 @@ services:
       - /:/host:ro,rslave
   pihole:
     cap_add:
-      - NET_ADMIN
+      - CAP_SYS_NICE # NTP
+      - CAP_SYS_TIME # CPU prio
+      - NET_ADMIN    # net conf
     container_name: pihole
     depends_on:
       - dhcphelper
@@ -79,7 +78,10 @@ services:
       - 76.76.10.2
     env_file: .env
     environment:
-      WEBPASSWORD_FILE: "/run/secrets/WEBPASSWORD"
+      FTLCONF_dns_listeningMode: 'all'
+      FTLCONF_dns_upstreams: '76.76.2.2;76.76.10.2'
+      FTLCONF_webserver_api_password: "${ADMIN_PASSWORD}"
+      FTLCONF_webserver_port: '8081,8444s'
     hostname: pihole
     image: pihole/pihole:latest
     labels:
@@ -89,14 +91,14 @@ services:
       - homepage.href=https://stargate.${DOMAIN}/admin
       - homepage.description=DNS Ad-Blocking and DHCP server
       - homepage.widget.type=pihole
-      - homepage.widget.url=http://stargate:801
-      - homepage.widget.key=${PIHOLE_API_KEY}
+      - homepage.widget.url=http://stargate:8081
+      - homepage.widget.key=${PIHOLE_APP_PASS}
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
       - traefik.http.routers.pihole.rule=host(`stargate.${DOMAIN}`)
       - traefik.http.routers.pihole.tls=true
-      - traefik.http.services.pihole.loadbalancer.server.port=80
-      - traefik.http.services.pihole.loadbalancer.server.url=http://127.0.0.1:801
+      - traefik.http.services.pihole.loadbalancer.server.port=8081
+      - traefik.http.services.pihole.loadbalancer.server.url=http://127.0.0.1:8081
     networks:
       backend:
         ipv4_address: "172.52.0.10"
@@ -104,10 +106,8 @@ services:
     ports:
       - 53:53/tcp
       - 53:53/udp
-      - 801:80
+      - 8081:8081
     restart: unless-stopped
-    secrets:
-      - WEBPASSWORD
     volumes:
       - /etc/stargate/docker/dnsmasq.d:/etc/dnsmasq.d
       - /etc/stargate/docker/pihole:/etc/pihole
