@@ -103,11 +103,10 @@ services:
     networks:
       backend:
         ipv4_address: "172.52.0.10"
-      default: {}
     ports:
       - 53:53/tcp
       - 53:53/udp
-      - 8081:8081
+      - 8444:8444
     restart: unless-stopped
     volumes:
       - /etc/stargate/docker/dnsmasq.d:/etc/dnsmasq.d
