@@ -48,6 +48,21 @@ services:
     env_file: .env
     hostname: nginx-proxy-manager
     image: jc21/nginx-proxy-manager
+    labels:
+      - homepage.description=Global Reverse Proxy
+      - homepage.group=Core
+      - homepage.href=https://npm.stargate.${DOMAIN}
+      - homepage.icon=npm
+      - homepage.name=Nginx
+      - homepage.widget.password=${NPM_PASSWORD}
+      - homepage.widget.type=npm
+      - homepage.widget.url=http://stargate:81
+      - homepage.widget.username=${NPM_EMAIL}
+      - traefik.enable=true
+      - traefik.http.routers.nginx-proxy-manager.entrypoints=websecure
+      - traefik.http.routers.nginx-proxy-manager.rule=Host(`npm.stargate.${DOMAIN}`)
+      - traefik.http.routers.nginx-proxy-manager.tls=true
+      - traefik.http.services.nginx-proxy-manager.loadbalancer.server.port=81
     ports:
       - 80:80
       - 81:81
