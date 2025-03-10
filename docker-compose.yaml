@@ -105,9 +105,9 @@ services:
       - homepage.href=https://stargate.${DOMAIN}/admin
       - homepage.icon=pi-hole
       - homepage.name=PiHole
-      - homepage.widget.key=${PIHOLE_APP_PASS}
+      - homepage.widget.key=${ADMIN_PASSWORD}
       - homepage.widget.type=pihole
-      - homepage.widget.url=http://stargate:8081
+      - homepage.widget.url=https://stargate:8444
       - homepage.widget.version=6
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
