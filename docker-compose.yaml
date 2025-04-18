@@ -83,11 +83,11 @@ services:
     hostname: nginx-proxy-manager
     image: jc21/nginx-proxy-manager
     labels:
-      - homepage.description=Global Reverse Proxy
+      - homepage.description=Reverse Proxy
       - homepage.group=Core
       - homepage.href=https://npm.stargate.${DOMAIN}
-      - homepage.icon=npm
-      - homepage.name=Nginx
+      - homepage.icon=nginx-proxy-manager
+      - homepage.name=Nginx Proxy Manager
       - homepage.widget.password=${NPM_PASSWORD}
       - homepage.widget.type=npm
       - homepage.widget.url=http://stargate:81
@@ -235,7 +235,7 @@ services:
     container_name: traefik
     env_file: .env
     environment:
-      CLOUDFLARE_DNS_API_TOKEN: "${CF_TOKEN}"
+      CLOUDFLARE_DNS_API_TOKEN: "${CF_API_TOKEN}"
       CLOUDFLARE_EMAIL: "${CF_EMAIL}"
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: "${CF_EMAIL}"
     extra_hosts:
