@@ -11,16 +11,37 @@ services:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
   ddns:
+    cap_drop:
+      - all
     container_name: ddns
     env_file: .env
     environment:
-      API_KEY: "${CF_TOKEN}"
-      PROXIED: "true"
-      SUBDOMAIN: "*"
-      ZONE: "${CF_ZONE}"
-    image: oznu/cloudflare-ddns:latest
+      CLOUDFLARE_API_TOKEN: "${CF_API_TOKEN}"
+      DOMAINS: "${CF_DOMAINS}"
+      PROXIED: "false"
+    image: favonia/cloudflare-ddns:latest
     network_mode: host
+    read_only: true
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
+  ddns-proxied:
+    cap_drop:
+      - all
+    container_name: ddns-proxied
+    env_file: .env
+    environment:
+      CLOUDFLARE_API_TOKEN: "${CF_API_TOKEN}"
+      DOMAINS: "${CF_PROXIED_DOMAINS}"
+      PROXIED: "true"
+    image: favonia/cloudflare-ddns:latest
+    network_mode: host
+    read_only: true
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "1000:1000"
   dhcphelper:
     cap_add:
       - NET_ADMIN
