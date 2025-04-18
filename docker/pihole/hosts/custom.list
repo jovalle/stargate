@@ -17,14 +17,27 @@
 #                       WITHIN /etc/dnsmasq.d/yourname.conf                      #
 #    (make sure misc.etc_dnsmasq_d is set to true in /etc/pihole/pihole.toml)    #
 #                                                                                #
-#                      Last updated: 2025-03-08 14:30:29 EST                     #
-#                              by FTL version v6.0.4                             #
+#                      Last updated: 2025-04-18 12:32:21 EDT                     #
+#                               by FTL version v6.1                              #
 #                                                                                #
 ##################################################################################
 
 192.168.31.254 internal.techn.is
 192.168.31.2 stargate
-192.168.31.3 warpgate
+192.168.31.31 nexus
+192.168.31.1 gateway
+192.168.31.81 k8s1
+192.168.31.82 k8s2
+192.168.31.83 k8s3
+192.168.31.80 k8s
+192.168.31.11 ms-01
+192.168.31.12 ms-02
+192.168.31.13 ms-03
+192.168.31.212 nginx.techn.is
+192.168.31.10 ms
+192.168.31.4 mothership
+192.168.31.5 watchtower
+192.168.31.3 starport
 
 
-# There are 3 entries in this file
+# There are 16 entries in this file

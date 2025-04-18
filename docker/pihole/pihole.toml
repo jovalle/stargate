@@ -1,7 +1,7 @@
-# Pi-hole configuration file (v6.0.4)
+# Pi-hole configuration file (v6.1)
 # Encoding: UTF-8
 # This file is managed by pihole-FTL
-# Last updated on 2025-03-08 14:30:52 EST
+# Last updated on 2025-04-18 16:49:24 EDT
 
 [dns]
   # Array of upstream DNS servers used by Pi-hole
@@ -103,7 +103,20 @@
   hosts = [
     "192.168.31.254 internal.techn.is",
     "192.168.31.2 stargate",
-    "192.168.31.3 warpgate"
+    "192.168.31.31 nexus",
+    "192.168.31.1 gateway",
+    "192.168.31.81 k8s1",
+    "192.168.31.82 k8s2",
+    "192.168.31.83 k8s3",
+    "192.168.31.80 k8s",
+    "192.168.31.11 ms-01",
+    "192.168.31.12 ms-02",
+    "192.168.31.13 ms-03",
+    "192.168.31.212 nginx.techn.is",
+    "192.168.31.10 ms",
+    "192.168.31.4 mothership",
+    "192.168.31.5 watchtower",
+    "192.168.31.3 starport"
   ] ### CHANGED, default = []
 
   # If set, A and AAAA queries for plain names, without dots or domain parts, are never
@@ -138,7 +151,7 @@
   #
   # Possible values are:
   #     <any valid domain>
-  domain = "technis.net" ### CHANGED, default = "lan"
+  domain = "" ### CHANGED, default = "lan"
 
   # Should all reverse lookups for private IP ranges (i.e., 192.168.x.y, etc) which are
   # not found in /etc/hosts or the DHCP leases file be answered with "no such domain"
@@ -205,9 +218,10 @@
   # Possible values are:
   #     Array of CNAMEs each on in one of the following forms: "<cname>,<target>[,<TTL>]"
   cnameRecords = [
-    "stargate.techn.is,stargate",
-    "warpgate.techn.is,warpgate",
-    "nexus.techn.is,nexus"
+    "*.techn.is,mothership",
+    "ms.techn.is,ms",
+    "ceph.techn.is,internal.techn.is",
+    "k8s.techn.is,k8s"
   ] ### CHANGED, default = []
 
   # Port used by the DNS server
@@ -236,7 +250,9 @@
   #     array of reverse servers each one in one of the following forms:
   #     "<enabled>,<ip-address>[/<prefix-len>],<server>[#<port>][,<domain>]", e.g.,
   #     "true,192.168.0.0/24,192.168.0.1,fritz.box"
-  revServers = []
+  revServers = [
+    "true,192.168.31.0/24,192.168.31.1,technis.net"
+  ] ### CHANGED, default = []
 
   [dns.cache]
     # Cache size of the DNS server. Note that expiring cache entries naturally make room
@@ -323,6 +339,11 @@
     # https://developer.apple.com/support/prepare-your-network-for-icloud-private-relay
     iCloudPrivateRelay = true
 
+    # Should Pi-hole always reply with NODATA to all queries to zone resolver.arpa to
+    # prevent devices from bypassing Pi-hole using Discovery of Designated Resolvers? This
+    # is based on recommendations at the end of RFC 9462, section 4.
+    designatedResolver = true
+
     [dns.reply.host]
       # Use a specific IPv4 address for the Pi-hole host? By default, FTL determines the
       # address of the interface a query arrived on and uses this address for replying to A
@@ -404,7 +425,7 @@
 
 [dhcp]
   # Is the embedded DHCP server enabled?
-  active = true ### CHANGED, default = false
+  active = false
 
   # Start address of the DHCP address pool
   #
@@ -492,21 +513,14 @@
     "A8:A1:59:5D:AC:17,192.168.31.7,illmatic",
     "7c:83:34:bb:0f:75,192.168.31.8,watchtower",
     "B0:41:6F:0E:51:75,192.168.31.9,mothership",
-    "58:47:CA:77:80:E6,192.168.31.11,ms-01",
-    "58:47:CA:77:4F:D2,192.168.31.12,ms-02",
-    "58:47:CA:77:80:32,192.168.31.13,ms-03",
     "0C:EA:14:8B:23:10,192.168.31.31,nexus",
     "C0:49:EF:8A:05:B0,192.168.31.51,shelly1",
     "C0:49:EF:8B:98:E4,192.168.31.52,shelly2",
     "C0:49:EF:8C:04:48,192.168.31.53,shelly3",
     "C0:49:EF:8B:EE:34,192.168.31.54,shelly4",
-    "74:63:68:6e:73:81,192.168.31.81,k8s1",
-    "74:63:68:6e:73:82,192.168.31.82,k8s2",
-    "74:63:68:6e:73:83,192.168.31.83,k8s3",
-    "74:63:68:6e:73:84,192.168.31.84,k8s4",
-    "74:63:68:6e:73:85,192.168.31.85,k8s5",
-    "74:63:68:6e:73:86,192.168.31.86,k8s6",
-    "74:63:68:6e:73:87,192.168.31.87,k8s7"
+    "58:47:CA:77:80:E6,192.168.31.81,k8s1",
+    "58:47:CA:77:4F:D2,192.168.31.82,k8s2",
+    "58:47:CA:77:80:32,192.168.31.83,k8s3"
   ] ### CHANGED, default = []
 
   [ntp.ipv4]
@@ -634,7 +648,7 @@
   #
   # Possible values are:
   #     <valid domain>
-  domain = "pi.hole"
+  domain = "stargate.techn.is" ### CHANGED, default = "pi.hole"
 
   # Webserver access control list (ACL) allowing for restrictions to be put on the list
   # of IP addresses which have access to the web server. The ACL is a comma separated
@@ -704,6 +718,9 @@
   # Additional HTTP headers added to the web server responses.
   # The headers are added to all responses, including those for the API.
   # Note about the default additional headers:
+  # - X-DNS-Prefetch-Control: off: Usually browsers proactively perform domain name
+  # resolution on links that the user may choose to follow. We disable DNS prefetching
+  # here.
   # - Content-Security-Policy: [...] 'unsafe-inline' is both required by Chart.js
   # styling some elements directly, and index.html containing some inlined Javascript
   # code.
@@ -730,7 +747,12 @@
     "X-XSS-Protection: 0",
     "X-Content-Type-Options: nosniff",
     "Referrer-Policy: strict-origin-when-cross-origin"
-  ]
+  ] ### CHANGED, default = [ "X-DNS-Prefetch-Control: off", "Content-Security-Policy: default-src 'self' 'unsafe-inline';", "X-Frame-Options: DENY", "X-XSS-Protection: 0", "X-Content-Type-Options: nosniff", "Referrer-Policy: strict-origin-when-cross-origin" ]
+
+  # Should the web server serve all files in webserver.paths.webroot directory? If
+  # disabled, only files within the path defined through webserver.paths.webhome and
+  # /api will be served.
+  serve_all = false
 
   [webserver.session]
     # Session timeout in seconds. If a session is inactive for more than this time, it will
@@ -775,6 +797,22 @@
     #     <valid subpath>, both slashes are needed!
     webhome = "/admin/"
 
+    # Prefix where the web interface is served
+    # This is useful when you are using a reverse proxy serving the web interface, e.g.,
+    # at http://<ip>/pihole/admin/ instead of http://<ip>/admin/. In this example, the
+    # prefix would be "/pihole". Note that the prefix has to be stripped away by the
+    # reverse proxy, e.g., for traefik:
+    # - traefik.http.routers.pihole.rule=PathPrefix(`/pihole`)
+    # - traefik.http.middlewares.piholehttp.stripprefix.prefixes=/pihole
+    # The prefix should start with a slash. If you don't use a prefix, leave this field
+    # empty. Setting this field to an incorrect value may result in the web interface not
+    # being accessible.
+    # Don't use this setting if you are not using a reverse proxy!
+    #
+    # Possible values are:
+    #     valid URL prefix or empty
+    prefix = ""
+
   [webserver.interface]
     # Should the web interface use the boxed layout?
     boxed = true
@@ -812,7 +850,7 @@
     #
     # Possible values are:
     #     <valid Pi-hole password hash>
-    pwhash = ""
+    pwhash = "$BALLOON-SHA256$v=1$s=1024,t=32$B0ZVoQ75pQW15esBdlvrUg==$Ge5Vc7bouhPjREu5Qf1Cog24s3oH9XrGaDknMC3Eu5k=" ### CHANGED, default = ""
 
     # Pi-hole 2FA TOTP secret. When set to something different than "", 2FA authentication
     # will be enforced for the API and the web interface. This setting is write-only, you
@@ -1202,8 +1240,8 @@
   all = false
 
 # Configuration statistics:
-# 153 total entries out of which 134 entries are default
-# --> 19 entries are modified
+# 156 total entries out of which 135 entries are default
+# --> 21 entries are modified
 # 3 entries are forced through environment:
 #   - dns.upstreams
 #   - dns.listeningMode
