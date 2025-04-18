@@ -42,15 +42,6 @@ services:
     security_opt:
       - no-new-privileges:true
     user: "1000:1000"
-  dhcphelper:
-    cap_add:
-      - NET_ADMIN
-    container_name: dhcphelper
-    environment:
-      IP: '172.52.0.10'
-    image: homeall/dhcphelper:latest
-    network_mode: host
-    restart: unless-stopped
   docker-socket-proxy:
     container_name: docker-socket-proxy
     environment:
@@ -64,6 +55,28 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+  nebula-sync:
+    container_name: nebula-sync
+    env_file: .env
+    environment:
+      - PRIMARY=https://stargate.techn.is|${ADMIN_PASSWORD}
+      - REPLICAS=https://starport.techn.is|${ADMIN_PASSWORD}
+      - FULL_SYNC=true
+      - RUN_GRAVITY=true
+      - CRON=0 * * * *
+    hostname: nebula-sync
+    image: ghcr.io/lovelaze/nebula-sync
+    labels:
+      - homepage.description=(Secondary) DNS Ad-Blocking and DHCP Server
+      - homepage.group=Core
+      - homepage.href=https://starport.${DOMAIN}/admin
+      - homepage.icon=pi-hole
+      - homepage.name=PiHole 2 (Starport)
+      - homepage.widget.key=${ADMIN_PASSWORD}
+      - homepage.widget.type=pihole
+      - homepage.widget.url=https://starport
+      - homepage.widget.version=6
+    restart: unless-stopped
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
     env_file: .env
@@ -107,8 +120,6 @@ services:
       - CAP_SYS_TIME # CPU prio
       - NET_ADMIN # net conf
     container_name: pihole
-    depends_on:
-      - dhcphelper
     dns:
       - 76.76.2.2
       - 76.76.10.2
@@ -125,7 +136,7 @@ services:
       - homepage.group=Core
       - homepage.href=https://stargate.${DOMAIN}/admin
       - homepage.icon=pi-hole
-      - homepage.name=PiHole
+      - homepage.name=PiHole 1 (Stargate)
       - homepage.widget.key=${ADMIN_PASSWORD}
       - homepage.widget.type=pihole
       - homepage.widget.url=https://stargate:8444
@@ -142,6 +153,7 @@ services:
     ports:
       - 53:53/tcp
       - 53:53/udp
+      - 8081:8081
       - 8444:8444
     restart: unless-stopped
     volumes:
