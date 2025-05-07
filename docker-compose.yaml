@@ -143,17 +143,16 @@ services:
       - homepage.widget.version=6
       - traefik.enable=true
       - traefik.http.routers.pihole.entrypoints=websecure
-      - traefik.http.routers.pihole.rule=host(`stargate.${DOMAIN}`)
+      - traefik.http.routers.pihole.rule=Host(`stargate.${DOMAIN}`)
       - traefik.http.routers.pihole.tls=true
       - traefik.http.services.pihole.loadbalancer.server.port=8081
-      - traefik.http.services.pihole.loadbalancer.server.url=http://127.0.0.1:8081
     networks:
       backend:
         ipv4_address: "172.52.0.10"
+      default: {}
     ports:
       - 53:53/tcp
       - 53:53/udp
-      - 8081:8081
       - 8444:8444
     restart: unless-stopped
     volumes:
