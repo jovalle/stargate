@@ -1,7 +1,7 @@
 # Pi-hole configuration file (v6.1)
 # Encoding: UTF-8
 # This file is managed by pihole-FTL
-# Last updated on 2025-04-18 16:49:24 EDT
+# Last updated on 2025-05-07 19:58:24 EDT
 
 [dns]
   # Array of upstream DNS servers used by Pi-hole
@@ -114,9 +114,9 @@
     "192.168.31.13 ms-03",
     "192.168.31.212 nginx.techn.is",
     "192.168.31.10 ms",
-    "192.168.31.4 mothership",
-    "192.168.31.5 watchtower",
-    "192.168.31.3 starport"
+    "192.168.31.3 starport",
+    "192.168.31.5 plex",
+    "192.168.31.7 watchtower"
   ] ### CHANGED, default = []
 
   # If set, A and AAAA queries for plain names, without dots or domain parts, are never
@@ -218,10 +218,11 @@
   # Possible values are:
   #     Array of CNAMEs each on in one of the following forms: "<cname>,<target>[,<TTL>]"
   cnameRecords = [
-    "*.techn.is,mothership",
     "ms.techn.is,ms",
-    "ceph.techn.is,internal.techn.is",
-    "k8s.techn.is,k8s"
+    "k8s.techn.is,k8s",
+    "kuard.techn.is,nginx.techn.is",
+    "hubble.techn.is,internal.techn.is",
+    "ceph.techn.is,internal.techn.is"
   ] ### CHANGED, default = []
 
   # Port used by the DNS server

@@ -17,7 +17,7 @@
 #                       WITHIN /etc/dnsmasq.d/yourname.conf                      #
 #    (make sure misc.etc_dnsmasq_d is set to true in /etc/pihole/pihole.toml)    #
 #                                                                                #
-#                      Last updated: 2025-04-18 12:32:21 EDT                     #
+#                      Last updated: 2025-05-07 19:58:20 EDT                     #
 #                               by FTL version v6.1                              #
 #                                                                                #
 ##################################################################################
@@ -35,9 +35,9 @@
 192.168.31.13 ms-03
 192.168.31.212 nginx.techn.is
 192.168.31.10 ms
-192.168.31.4 mothership
-192.168.31.5 watchtower
 192.168.31.3 starport
+192.168.31.5 plex
+192.168.31.7 watchtower
 
 
 # There are 16 entries in this file
