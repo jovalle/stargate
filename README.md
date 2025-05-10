@@ -31,3 +31,12 @@ An extension of [Mothership](https://github.com/jovalle/mothership).
 ## 📋 Environment Variables
 
 A `.env` is no longer needed to store secrets. All secrets are now defined in `docker-compose.yaml` and encrypted in-line using `sops` and `age`.
+
+Store only common variables applicable to all compose services:
+
+```
+DOMAIN="example.net"
+PGID=1000
+PUID=1000
+TZ="America/New_York"
+```
