@@ -4,6 +4,64 @@ networks:
       config:
         - subnet: 172.52.0.0/16
 services:
+  adguard:
+    container_name: adguard
+    dns:
+      - 76.76.2.2
+      - 76.76.10.2
+    hostname: adguard
+    image: adguard/adguardhome
+    labels:
+      homepage.description: Ad-Blocking DNS Server
+      homepage.group: Core
+      homepage.href: https://stargate.${DOMAIN:-home.arpa}
+      homepage.icon: adguard-home
+      homepage.name: AdGuard Home (Primary)
+      homepage.widget.password: "${ADMIN_PASSWORD}"
+      homepage.widget.type: adguard
+      homepage.widget.url: https://stargate.${DOMAIN:-home.arpa}
+      homepage.widget.username: admin
+      traefik.enable: true
+      traefik.http.routers.pihole.entrypoints: websecure
+      traefik.http.routers.pihole.rule: Host(`stargate.${DOMAIN:-home.arpa}`)
+      traefik.http.routers.pihole.tls: true
+      traefik.http.services.pihole.loadbalancer.server.port: 80
+    networks:
+      backend:
+        ipv4_address: "172.52.0.10"
+      default: {}
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 853:853/tcp
+      - 853:853/udp
+      - 3000:3000/tcp
+      - 5443:5443/tcp
+      - 5443:5443/udp
+      - 6060:6060/tcp
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/adguard/conf:/opt/adguardhome/conf
+      - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
+  adguardhome-sync:
+    command: run --config /config/adguardhome-sync.yaml
+    container_name: adguardhome-sync
+    image: ghcr.io/bakito/adguardhome-sync
+    labels:
+      homepage.description: Ad-Blocking DNS Server
+      homepage.group: Core
+      homepage.href: https://starport.${DOMAIN:-home.arpa}
+      homepage.icon: adguard-home
+      homepage.name: AdGuard Home (Replica)
+      homepage.widget.password: "${ADMIN_PASSWORD}"
+      homepage.widget.type: adguard
+      homepage.widget.url: https://starport.${DOMAIN:-home.arpa}
+      homepage.widget.username: admin
+    ports:
+      - 8081:8080
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
   cloudflared:
     command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
     container_name: cloudflared
@@ -55,28 +113,6 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-  nebula-sync:
-    container_name: nebula-sync
-    env_file: .env
-    environment:
-      - PRIMARY=https://stargate.techn.is|${ADMIN_PASSWORD}
-      - REPLICAS=https://starport.techn.is|${ADMIN_PASSWORD}
-      - FULL_SYNC=true
-      - RUN_GRAVITY=true
-      - CRON=0 * * * *
-    hostname: nebula-sync
-    image: ghcr.io/lovelaze/nebula-sync
-    labels:
-      - homepage.description=(Secondary) DNS Ad-Blocking and DHCP Server
-      - homepage.group=Core
-      - homepage.href=https://starport.${DOMAIN}/admin
-      - homepage.icon=pi-hole
-      - homepage.name=PiHole 2 (Starport)
-      - homepage.widget.key=${ADMIN_PASSWORD}
-      - homepage.widget.type=pihole
-      - homepage.widget.url=https://starport
-      - homepage.widget.version=6
-    restart: unless-stopped
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
     env_file: .env
@@ -114,50 +150,6 @@ services:
     restart: unless-stopped
     volumes:
       - /:/host:ro,rslave
-  pihole:
-    cap_add:
-      - CAP_SYS_NICE # NTP
-      - CAP_SYS_TIME # CPU prio
-      - NET_ADMIN # net conf
-    container_name: pihole
-    dns:
-      - 76.76.2.2
-      - 76.76.10.2
-    env_file: .env
-    environment:
-      FTLCONF_dns_listeningMode: 'all'
-      FTLCONF_dns_upstreams: '76.76.2.2;76.76.10.2'
-      FTLCONF_webserver_api_password: "${ADMIN_PASSWORD}"
-      FTLCONF_webserver_port: '8081,8444s'
-    hostname: pihole
-    image: pihole/pihole:latest
-    labels:
-      - homepage.description=DNS Ad-Blocking and DHCP server
-      - homepage.group=Core
-      - homepage.href=https://stargate.${DOMAIN}/admin
-      - homepage.icon=pi-hole
-      - homepage.name=PiHole 1 (Stargate)
-      - homepage.widget.key=${ADMIN_PASSWORD}
-      - homepage.widget.type=pihole
-      - homepage.widget.url=https://stargate:8444
-      - homepage.widget.version=6
-      - traefik.enable=true
-      - traefik.http.routers.pihole.entrypoints=websecure
-      - traefik.http.routers.pihole.rule=Host(`stargate.${DOMAIN}`)
-      - traefik.http.routers.pihole.tls=true
-      - traefik.http.services.pihole.loadbalancer.server.port=8081
-    networks:
-      backend:
-        ipv4_address: "172.52.0.10"
-      default: {}
-    ports:
-      - 53:53/tcp
-      - 53:53/udp
-      - 8444:8444
-    restart: unless-stopped
-    volumes:
-      - /etc/stargate/docker/dnsmasq.d:/etc/dnsmasq.d
-      - /etc/stargate/docker/pihole:/etc/pihole
   portainer:
     command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
     container_name: portainer

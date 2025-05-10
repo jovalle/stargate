@@ -22,6 +22,7 @@ acme.json
 cli_pw
 config_backups
 dhcp.leases
+docker/adguard/work/data
 gravity_backups
 gravity.db_temp*
 keys.json
