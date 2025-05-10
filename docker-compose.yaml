@@ -1,293 +1,312 @@
+configs:
+    admin_password_file:
+        content: ENC[AES256_GCM,data:Xo03idjoy45rtnueesr5AiESdCY=,iv:+cNRm0T9DJkWP5RHEJegCVfbF/PhIEACfeelM1SB+b4=,tag:fe09gFbCrDJbqEB3Fd8S3g==,type:str]
 networks:
-  backend:
-    ipam:
-      config:
-        - subnet: 172.52.0.0/16
+    backend:
+        ipam:
+            config:
+                - subnet: 172.52.0.0/16
 services:
-  adguard:
-    container_name: adguard
-    dns:
-      - 76.76.2.2
-      - 76.76.10.2
-    hostname: adguard
-    image: adguard/adguardhome
-    labels:
-      homepage.description: Ad-Blocking DNS Server
-      homepage.group: Core
-      homepage.href: https://stargate.${DOMAIN:-home.arpa}
-      homepage.icon: adguard-home
-      homepage.name: AdGuard Home (Primary)
-      homepage.widget.password: "${ADMIN_PASSWORD}"
-      homepage.widget.type: adguard
-      homepage.widget.url: https://stargate.${DOMAIN:-home.arpa}
-      homepage.widget.username: admin
-      traefik.enable: true
-      traefik.http.routers.pihole.entrypoints: websecure
-      traefik.http.routers.pihole.rule: Host(`stargate.${DOMAIN:-home.arpa}`)
-      traefik.http.routers.pihole.tls: true
-      traefik.http.services.pihole.loadbalancer.server.port: 80
-    networks:
-      backend:
-        ipv4_address: "172.52.0.10"
-      default: {}
-    ports:
-      - 53:53/tcp
-      - 53:53/udp
-      - 853:853/tcp
-      - 853:853/udp
-      - 3000:3000/tcp
-      - 5443:5443/tcp
-      - 5443:5443/udp
-      - 6060:6060/tcp
-    restart: unless-stopped
-    volumes:
-      - ${CONFIG_PATH:-./docker}/adguard/conf:/opt/adguardhome/conf
-      - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
-  adguardhome-sync:
-    command: run --config /config/adguardhome-sync.yaml
-    container_name: adguardhome-sync
-    image: ghcr.io/bakito/adguardhome-sync
-    labels:
-      homepage.description: Ad-Blocking DNS Server
-      homepage.group: Core
-      homepage.href: https://starport.${DOMAIN:-home.arpa}
-      homepage.icon: adguard-home
-      homepage.name: AdGuard Home (Replica)
-      homepage.widget.password: "${ADMIN_PASSWORD}"
-      homepage.widget.type: adguard
-      homepage.widget.url: https://starport.${DOMAIN:-home.arpa}
-      homepage.widget.username: admin
-    ports:
-      - 8081:8080
-    restart: unless-stopped
-    volumes:
-      - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
-  cloudflared:
-    command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
-    container_name: cloudflared
-    env_file: .env
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-  ddns:
-    cap_drop:
-      - all
-    container_name: ddns
-    env_file: .env
-    environment:
-      CLOUDFLARE_API_TOKEN: "${CF_API_TOKEN}"
-      DOMAINS: "${CF_DOMAINS}"
-      PROXIED: "false"
-    image: favonia/cloudflare-ddns:latest
-    network_mode: host
-    read_only: true
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    user: "1000:1000"
-  ddns-proxied:
-    cap_drop:
-      - all
-    container_name: ddns-proxied
-    env_file: .env
-    environment:
-      CLOUDFLARE_API_TOKEN: "${CF_API_TOKEN}"
-      DOMAINS: "${CF_PROXIED_DOMAINS}"
-      PROXIED: "true"
-    image: favonia/cloudflare-ddns:latest
-    network_mode: host
-    read_only: true
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    user: "1000:1000"
-  docker-socket-proxy:
-    container_name: docker-socket-proxy
-    environment:
-      - CONTAINERS=1
-      - POST=0
-      - SERVICES=1
-      - TASKS=1
-    image: ghcr.io/tecnativa/docker-socket-proxy
-    ports:
-      - 0.0.0.0:2375:2375
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-  nginx-proxy-manager:
-    container_name: nginx-proxy-manager
-    env_file: .env
-    hostname: nginx-proxy-manager
-    image: jc21/nginx-proxy-manager
-    labels:
-      - homepage.description=Reverse Proxy
-      - homepage.group=Core
-      - homepage.href=https://npm.stargate.${DOMAIN}
-      - homepage.icon=nginx-proxy-manager
-      - homepage.name=Nginx Proxy Manager
-      - homepage.widget.password=${NPM_PASSWORD}
-      - homepage.widget.type=npm
-      - homepage.widget.url=http://stargate:81
-      - homepage.widget.username=${NPM_EMAIL}
-      - traefik.enable=true
-      - traefik.http.routers.nginx-proxy-manager.entrypoints=websecure
-      - traefik.http.routers.nginx-proxy-manager.rule=Host(`npm.stargate.${DOMAIN}`)
-      - traefik.http.routers.nginx-proxy-manager.tls=true
-      - traefik.http.services.nginx-proxy-manager.loadbalancer.server.port=81
-    ports:
-      - 80:80
-      - 81:81
-      - 443:443
-    restart: unless-stopped
-    volumes:
-      - /etc/stargate/docker/nginx-proxy-manager:/data
-      - /etc/stargate/docker/letsencrypt:/etc/letsencrypt
-  node-exporter:
-    command: --path.rootfs=/host
-    container_name: node-exporter
-    image: quay.io/prometheus/node-exporter
-    ports:
-      - 9100:9100
-    restart: unless-stopped
-    volumes:
-      - /:/host:ro,rslave
-  portainer:
-    command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
-    container_name: portainer
-    env_file: .env
-    hostname: portainer
-    image: portainer/portainer-ce
-    labels:
-      - homepage.description=Container management
-      - homepage.group=Stargate
-      - homepage.href=https://portainer.stargate.${DOMAIN}
-      - homepage.icon=portainer
-      - homepage.name=Portainer
-      - homepage.widget.env=1
-      - homepage.widget.fields=["running", "stopped", "total"]
-      - homepage.widget.key=${PORTAINER_API_KEY}
-      - homepage.widget.type=portainer
-      - homepage.widget.url=http://stargate:9000
-      - traefik.enable=true
-      - traefik.http.routers.portainer.entrypoints=websecure
-      - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
-      - traefik.http.routers.portainer.tls=true
-      - traefik.http.services.portainer.loadbalancer.server.port=9000
-    ports:
-      - 9000:9000
-    volumes:
-      - /etc/stargate/docker/portainer:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-  tailscale:
-    cap_add:
-      - NET_ADMIN
-      - SYS_MODULE
-    container_name: tailscale
-    env_file: .env
-    environment:
-      TS_EXTRA_ARGS: '--advertise-exit-node'
-      TS_HOSTNAME: stargate
-      TS_ROUTES: 192.168.31.0/24
-      TS_STATE_DIR: /var/lib/tailscale
-      TS_USERSPACE: "false"
-    image: tailscale/tailscale:latest
-    labels:
-      - homepage.description=Private WireGuard Network
-      - homepage.group=Core
-      - homepage.href=https://login.tailscale.com/admin/machines
-      - homepage.icon=tailscale
-      - homepage.name=Tailscale
-      - homepage.widget.key=${TS_APIKEY}
-      - homepage.widget.type=tailscale
-      - homepage.widget.deviceid=${TS_DEVID}
-    restart: unless-stopped
-    volumes:
-      - /dev/net/tun:/dev/net/tun
-      - /etc/stargate/docker/tailscale:/var/lib/tailscale
-  traefik:
-    command:
-      - --api.dashboard=true
-      - --api.insecure=true
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.web.http.redirections.entryPoint.to=websecure
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.http.tls.certResolver=letsencrypt
-      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN},*.${DOMAIN}
-      - --entrypoints.websecure.http.tls=true
-      - --log.level=DEBUG
-      - --providers.docker.exposedbydefault=true
-      - --providers.docker=true
-      - --serverstransport.insecureskipverify=true
-    container_name: traefik
-    env_file: .env
-    environment:
-      CLOUDFLARE_DNS_API_TOKEN: "${CF_API_TOKEN}"
-      CLOUDFLARE_EMAIL: "${CF_EMAIL}"
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: "${CF_EMAIL}"
-    extra_hosts:
-      - host.docker.internal:172.17.0.1
-    hostname: traefik
-    image: traefik
-    labels:
-      - homepage.description=Reverse proxy for exposing apps via HTTPS
-      - homepage.group=Stargate
-      - homepage.href=https://traefik.stargate.${DOMAIN}
-      - homepage.icon=traefik
-      - homepage.name=Traefik
-      - homepage.widget.type=traefik
-      - homepage.widget.url=http://stargate:8888
-      - traefik.enable=true
-      - traefik.http.routers.dashboard.entrypoints=websecure
-      - traefik.http.routers.dashboard.rule=Host(`traefik.stargate.${DOMAIN}`)
-      - traefik.http.routers.dashboard.service=api@internal
-      - traefik.http.routers.dashboard.tls=true
-    networks:
-      backend: {}
-      default: {}
-    ports:
-      - 8080:80
-      - 8443:443
-      - 8888:8080
-    restart: unless-stopped
-    volumes:
-      - /etc/stargate/docker/letsencrypt/acme.json:/etc/traefik/acme.json
-      - /var/run/docker.sock:/var/run/docker.sock
-  uptime-kuma:
-    container_name: uptime-kuma
-    hostname: uptime-kuma
-    image: louislam/uptime-kuma:1
-    labels:
-      - homepage.description=Component Health Tracking and Alerting
-      - homepage.group=Core
-      - homepage.href=https://status.${DOMAIN}
-      - homepage.icon=uptime-kuma
-      - homepage.name=Uptime Kuma
-      - homepage.widget.slug=technis
-      - homepage.widget.type=uptimekuma
-      - homepage.widget.url=http://stargate:3001
-      - traefik.enable=true
-      - traefik.http.routers.uptime-kuma.entrypoints=websecure
-      - traefik.http.routers.uptime-kuma.rule=Host(`status.stargate.${DOMAIN}`)
-      - traefik.http.routers.uptime-kuma.tls=true
-      - traefik.http.services.uptime-kuma.loadbalancer.server.port=3001
-    ports:
-      - 3001:3001
-    restart: unless-stopped
-    volumes:
-      - /etc/stargate/docker/uptime-kuma:/app/data
-  watchtower:
-    container_name: watchtower
-    env_file: .env
-    environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_DEBUG: "true"
-      WATCHTOWER_SCHEDULE: "0 0 1 * * *"
-    image: containrrr/watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    adguard:
+        container_name: adguard
+        dns:
+            - 76.76.2.2
+            - 76.76.10.2
+        hostname: adguard
+        image: adguard/adguardhome
+        labels:
+            homepage.description: Ad-Blocking DNS Server
+            homepage.group: Core
+            homepage.href: https://stargate.${DOMAIN:-home.arpa}
+            homepage.icon: adguard-home
+            homepage.name: AdGuard Home (Primary)
+            homepage.widget.password: ENC[AES256_GCM,data:OEe++0zfxmtkZpFzEEJCRkA=,iv:mss85O2bVkh8jWFCoDuM4eGNmQpyJ2ztgWL6twI3Gfw=,tag:Govt6yB82zqvwLebrquNpA==,type:str]
+            homepage.widget.type: adguard
+            homepage.widget.url: https://stargate.${DOMAIN:-home.arpa}
+            homepage.widget.username: ENC[AES256_GCM,data:SOyd9eY=,iv:4fVpyKGm671AChVBoNpLcj7etnmEydu0qFE5SIM8p5Q=,tag:TmJr4QtZFPQhiSYB8bfkAA==,type:str]
+            traefik.enable: true
+            traefik.http.routers.pihole.entrypoints: websecure
+            traefik.http.routers.pihole.rule: Host(`stargate.${DOMAIN:-home.arpa}`)
+            traefik.http.routers.pihole.tls: true
+            traefik.http.services.pihole.loadbalancer.server.port: 80
+        networks:
+            backend:
+                ipv4_address: 172.52.0.10
+            default: {}
+        ports:
+            - 53:53/tcp
+            - 53:53/udp
+            - 853:853/tcp
+            - 853:853/udp
+            - 3000:3000/tcp
+            - 5443:5443/tcp
+            - 5443:5443/udp
+            - 6060:6060/tcp
+        restart: unless-stopped
+        volumes:
+            - ${CONFIG_PATH:-./docker}/adguard/conf:/opt/adguardhome/conf
+            - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
+    adguardhome-sync:
+        command: run --config /config/adguardhome-sync.yaml
+        container_name: adguardhome-sync
+        image: ghcr.io/bakito/adguardhome-sync
+        labels:
+            homepage.description: Ad-Blocking DNS Server
+            homepage.group: Core
+            homepage.href: https://starport.${DOMAIN:-home.arpa}
+            homepage.icon: adguard-home
+            homepage.name: AdGuard Home (Replica)
+            homepage.widget.password: ENC[AES256_GCM,data:hnN/iKoqtMamFa6at9xesXQ=,iv:1B2qolvJeVmla22q0D5gcwSOA2wTXMwkmGa8HbsSE88=,tag:bsHrsDz4ARLsvn/WqzY/wQ==,type:str]
+            homepage.widget.type: adguard
+            homepage.widget.url: https://starport.${DOMAIN:-home.arpa}
+            homepage.widget.username: ENC[AES256_GCM,data:UdeEc7A=,iv:ouHDoDOHHvSoagufNGPPPwQtjrqZtpU/ol2kwpvXcr0=,tag:4Jxcsi8M7qkr2faHiAApDw==,type:str]
+        ports:
+            - 8081:8080
+        restart: unless-stopped
+        volumes:
+            - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
+    cloudflared:
+        command: tunnel --no-autoupdate run
+        container_name: cloudflared
+        environment:
+            TUNNEL_TOKEN: ENC[AES256_GCM,data:2JYYpJWeJSB69Dua71wiFHO8NgQ2qGH1rHV5rkP1dW39lI+a8xqoOvT5UHi+t7DPkBCa1IlDtT4L2e5olhIJiXUfq/uCbg4jZNYNeoo6PzZ+EhmkciV0I5ZXLk6aXsxSFo/qwAPmeJUlyJzt0jO/PhplyCR4PxDmUITxNsOzTOdteSIFG6VM2V9M+hvMarkOlauq8D7dKRZ0ZPaNas1UnAxAtNvUCisC98r612NtcrOWVQbqqB6qtA==,iv:I/bG0gROjvsbNAK1B+mEuDe1b+4u7sOlJmSNxltA8mQ=,tag:U8nt6DVtIFCWVo5u2JX3ww==,type:str]
+        image: cloudflare/cloudflared:latest
+        restart: unless-stopped
+    ddns:
+        cap_drop:
+            - all
+        container_name: ddns
+        environment:
+            CLOUDFLARE_API_TOKEN: ENC[AES256_GCM,data:n6O5KDleWfw23J+Mqt0Jq9+eDeM1XKhQ44qXBAczTtL4yTn4rxIqSw==,iv:jUTC9tE/oDoMu/OMEKmlViXbcDovq8iE+5hBQe9+Kk0=,tag:jN4QKnRMekO5b1EW5nX+Cg==,type:str]
+            DOMAINS: ENC[AES256_GCM,data:JS8jt++NjhV/hzbXj17wFtqptGDOuRbuLZ3sGA==,iv:gNJxN8QuSgrOsKgsnplF2TnbATjcURkvtZg+G0zh4IM=,tag:r+paa+HMOBXMg6jJAbt6Zg==,type:str]
+            IP6_PROVIDER: none
+            PROXIED: "false"
+        image: favonia/cloudflare-ddns:latest
+        network_mode: host
+        read_only: true
+        restart: unless-stopped
+        security_opt:
+            - no-new-privileges:true
+        user: 1000:1000
+    ddns-proxied:
+        cap_drop:
+            - all
+        container_name: ddns-proxied
+        environment:
+            CLOUDFLARE_API_TOKEN: ENC[AES256_GCM,data:31LCo+RckJSBvYNcNNm9u1PQR8DVAiY4by4duTU8gHAWp5pWmiGZSw==,iv:XMys+LrfLG/8Y9z0GjeMAoDlmDqwfDGxE4qEMoeGMYA=,tag:8sx1wlBfjN2qi08mr5/Z1g==,type:str]
+            DOMAINS: ENC[AES256_GCM,data:f8QTeBG4IhAHVCx/,iv:Md9fwuM/rF9lD/n2zyPvZ40F+Nf1DPh/P4UMzuA3MWM=,tag:x6G3DvVfx1hW8yiizAaz/g==,type:str]
+            IP6_PROVIDER: none
+            PROXIED: "true"
+        image: favonia/cloudflare-ddns:latest
+        network_mode: host
+        read_only: true
+        restart: unless-stopped
+        security_opt:
+            - no-new-privileges:true
+        user: 1000:1000
+    docker-socket-proxy:
+        container_name: docker-socket-proxy
+        environment:
+            CONTAINERS: 1
+            POST: 0
+            SERVICES: 1
+            TASKS: 1
+        image: ghcr.io/tecnativa/docker-socket-proxy
+        ports:
+            - 0.0.0.0:2375:2375
+        restart: unless-stopped
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+    nginx-proxy-manager:
+        container_name: nginx-proxy-manager
+        hostname: nginx-proxy-manager
+        image: jc21/nginx-proxy-manager
+        labels:
+            homepage.description: Reverse Proxy
+            homepage.group: Core
+            homepage.href: https://npm.stargate.${DOMAIN:-home.arpa}
+            homepage.icon: nginx-proxy-manager
+            homepage.name: Nginx Proxy Manager
+            homepage.widget.password: ENC[AES256_GCM,data:D9dO7/T3m6RvXFcyusjQ8zMWuiLl3MrdVnI=,iv:f0GxBL/SHyqECCdQNFsfBQSQIwTXfdv4hYwQT0wISOc=,tag:Lfe2BDXcLTGnY/Nt4tXLTw==,type:str]
+            homepage.widget.type: npm
+            homepage.widget.url: http://stargate:81
+            homepage.widget.username: ENC[AES256_GCM,data:cjeeqh1xFR4ggEB09eTYAw==,iv:Tf1uDcTzohcF+M7DOV4OjSXzyQ52ARDSrXRjVwiAFu8=,tag:FfziyGBHAB6OWuRkOVChNQ==,type:str]
+            traefik.enable: true
+            traefik.http.routers.nginx-proxy-manager.entrypoints: websecure
+            traefik.http.routers.nginx-proxy-manager.rule: Host(`npm.stargate.${DOMAIN:-home.arpa}`)
+            traefik.http.routers.nginx-proxy-manager.tls: true
+            traefik.http.services.nginx-proxy-manager.loadbalancer.server.port: 81
+        ports:
+            - 80:80
+            - 81:81
+            - 443:443
+        restart: unless-stopped
+        volumes:
+            - ${CONFIG_PATH:-./docker}/nginx-proxy-manager:/data
+            - ${CONFIG_PATH:-./docker}/letsencrypt:/etc/letsencrypt
+    node-exporter:
+        command: --path.rootfs=/host
+        container_name: node-exporter
+        image: quay.io/prometheus/node-exporter
+        ports:
+            - 9100:9100
+        restart: unless-stopped
+        volumes:
+            - /:/host:ro,rslave
+    portainer:
+        command: -H unix:///var/run/docker.sock --admin-password-file /run/admin_password_file
+        configs:
+            - mode: 400
+              source: admin_password_file
+              target: /run/admin_password_file
+        container_name: portainer
+        hostname: portainer
+        image: portainer/portainer-ce
+        labels:
+            homepage.description: Container management
+            homepage.group: Stargate
+            homepage.href: https://portainer.stargate.${DOMAIN:-home.arpa}
+            homepage.icon: portainer
+            homepage.name: Portainer
+            homepage.widget.env: 1
+            homepage.widget.fields: '["running", "stopped", "total"]'
+            homepage.widget.key: ENC[AES256_GCM,data:736Y3CaY/CXppJYgtPlIKi6X8LYGEDJBuJrnhK/+7mvizcrySIbPitdCtZgRtvU5,iv:OBWvZQj6QiUH1QA1oTH28xnpQ5P1AilDTAnRNNanYpQ=,tag:P7OWBIc1xDdnXcFeogxciw==,type:str]
+            homepage.widget.type: portainer
+            homepage.widget.url: http://stargate:9000
+            traefik.enable: true
+            traefik.http.routers.portainer.entrypoints: websecure
+            traefik.http.routers.portainer.rule: Host(`portainer.stargate.${DOMAIN:-home.arpa}`)
+            traefik.http.routers.portainer.tls: true
+            traefik.http.services.portainer.loadbalancer.server.port: 9000
+        ports:
+            - 9000:9000
+        volumes:
+            - ${CONFIG_PATH:-./docker}/portainer:/data
+            - /var/run/docker.sock:/var/run/docker.sock
+    tailscale:
+        cap_add:
+            - NET_ADMIN
+            - SYS_MODULE
+        container_name: tailscale
+        environment:
+            TS_AUTH_KEY: ENC[AES256_GCM,data:R3F1vM0k36i4mFofz/ofOcJmXiylPPayvR/lUNkwgBKmhZCO1gNvY9j3iYOvGw0BTlHg9/SqD8ecKvmZCJ0=,iv:JT7soM742vuBj15Iy5NECHZT1/5d6W5TJWK8fOcccbM=,tag:FSmvsDB5c4FldChpAEo10Q==,type:str]
+            TS_EXTRA_ARGS: --advertise-exit-node
+            TS_HOSTNAME: stargate
+            TS_ROUTES: 192.168.31.0/24
+            TS_STATE_DIR: /var/lib/tailscale
+            TS_USERSPACE: "false"
+        image: tailscale/tailscale:latest
+        labels:
+            homepage.description: Private WireGuard Network
+            homepage.group: Core
+            homepage.href: https://login.tailscale.com/admin/machines
+            homepage.icon: tailscale
+            homepage.name: Tailscale
+            homepage.widget.deviceid: ENC[AES256_GCM,data:jyTBV+Ps6Hk7flzkF+P5UKg=,iv:1UFCosIFvQVQ/gJOTVUIBCbzhm59JlEVIbLWiw2wMmY=,tag:8MPALbx6qUAt4SPXY+qcFA==,type:str]
+            homepage.widget.key: ENC[AES256_GCM,data:VU6BFFDBhFvFZnMN2NpTeUjNUVIrml/ek1On1qvsbcByYqLlFDpvYwLj7kZxG4ufVXppPHx1SHQEJG8Y,iv:G+/2DNtu44t+vMUAIRIQktCWdpI5uAuT4kk2PS+aZiU=,tag:PGmmosp3G1KkqeueskGGvQ==,type:str]
+            homepage.widget.type: tailscale
+        restart: unless-stopped
+        volumes:
+            - /dev/net/tun:/dev/net/tun
+            - ${CONFIG_PATH:-./docker}/tailscale:/var/lib/tailscale
+    traefik:
+        command:
+            - --api.dashboard=true
+            - --api.insecure=true
+            - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+            - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53
+            - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+            - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json
+            - --entrypoints.web.address=:80
+            - --entrypoints.web.http.redirections.entryPoint.scheme=https
+            - --entrypoints.web.http.redirections.entryPoint.to=websecure
+            - --entrypoints.websecure.address=:443
+            - --entrypoints.websecure.http.tls.certResolver=letsencrypt
+            - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN:-home.arpa}
+            - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN:-home.arpa},*.${DOMAIN:-home.arpa}
+            - --entrypoints.websecure.http.tls=true
+            - --log.level=DEBUG
+            - --providers.docker.exposedbydefault=true
+            - --providers.docker=true
+            - --serverstransport.insecureskipverify=true
+        container_name: traefik
+        environment:
+            CLOUDFLARE_DNS_API_TOKEN: ENC[AES256_GCM,data:wkE5bLGtnhHLbJ01HNVQ4nltY7Aszj0m4omznf8lPuo4eesVJ1FFIA==,iv:Z0ZXzEk4t+sAOMbi4mhz5hycWvmFsVGcYapSq7LusPY=,tag:7AVMd9yC26TAcmz5DbkVag==,type:str]
+            CLOUDFLARE_EMAIL: ENC[AES256_GCM,data:NbeU8X16IZY/MA==,iv:DCyeel2nfgN+hVEqcN0NjPqHyVQe+GIIjQcrlyWQ6MA=,tag:ucFo0femdLEH7tlz7pskWA==,type:str]
+            TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ENC[AES256_GCM,data:aWIRgghR89GvSw==,iv:9OxHmL6To4/BBVSsQx0YhMR9NLbjn0fNI8tDrYtbUZs=,tag:oKmkFblIgJXSPLmEa1pHBw==,type:str]
+        extra_hosts:
+            - host.docker.internal:172.17.0.1
+        hostname: traefik
+        image: traefik
+        labels:
+            homepage.description: Reverse proxy for exposing apps via HTTPS
+            homepage.group: Stargate
+            homepage.href: https://traefik.stargate.${DOMAIN:-home.arpa}
+            homepage.icon: traefik
+            homepage.name: Traefik
+            homepage.widget.type: traefik
+            homepage.widget.url: http://stargate:8888
+            traefik.enable: true
+            traefik.http.routers.dashboard.entrypoints: websecure
+            traefik.http.routers.dashboard.rule: Host(`traefik.stargate.${DOMAIN:-home.arpa}`)
+            traefik.http.routers.dashboard.service: api@internal
+            traefik.http.routers.dashboard.tls: true
+        networks:
+            backend: {}
+            default: {}
+        ports:
+            - 8080:80
+            - 8443:443
+            - 8888:8080
+        restart: unless-stopped
+        volumes:
+            - ${CONFIG_PATH:-./docker}/letsencrypt/acme.json:/etc/traefik/acme.json
+            - /var/run/docker.sock:/var/run/docker.sock
+    uptime-kuma:
+        container_name: uptime-kuma
+        hostname: uptime-kuma
+        image: louislam/uptime-kuma:1
+        labels:
+            homepage.description: Component Health Tracking and Alerting
+            homepage.group: Core
+            homepage.href: https://status.${DOMAIN:-home.arpa}
+            homepage.icon: uptime-kuma
+            homepage.name: Uptime Kuma
+            homepage.widget.slug: technis
+            homepage.widget.type: uptimekuma
+            homepage.widget.url: http://stargate:3001
+            traefik.enable: true
+            traefik.http.routers.uptime-kuma.entrypoints: websecure
+            traefik.http.routers.uptime-kuma.rule: Host(`status.stargate.${DOMAIN:-home.arpa}`)
+            traefik.http.routers.uptime-kuma.tls: true
+            traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
+        ports:
+            - 3001:3001
+        restart: unless-stopped
+        volumes:
+            - ${CONFIG_PATH:-./docker}/uptime-kuma:/app/data
+    watchtower:
+        container_name: watchtower
+        environment:
+            WATCHTOWER_CLEANUP: "true"
+            WATCHTOWER_DEBUG: "true"
+            WATCHTOWER_SCHEDULE: 0 0 1 * * *
+        image: containrrr/watchtower
+        restart: unless-stopped
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+sops:
+    age:
+        - recipient: age1vcvqgw7cga7tdg2a9w5486mjjm2gsdmkcj35nqs7rcu3v3gvad2q2zs940
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA3ZktyaWpaMXExc1VubzNO
+            UmtCMWFkRjZkZHVIUE1rN0pQZGhYTFNIb1VzCmNTbkhkd1B2UVBGMzRySFhLUjhQ
+            VlhXamZqR2NiZFQzemovSGVZMXBVUDAKLS0tIHRLRG1BVU1qb0VZNjR5WVFJR2hR
+            ZCtwbk1LM0RkME5kdTg1bExndlhOTjQKXQ9zcJ+pGnclUh23MnOkfz4/VCzD0j6x
+            CtgDwm1WQoPgekdCgnfhSHES0g7o3h7sdyCV6tB5pqtNpZp+3wGV5w==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-05-10T22:43:41Z"
+    mac: ENC[AES256_GCM,data:eOFbxQudC4dywlPX8v0W8HAWjqdy5dnorYEIcmSKF31S9+QcZEDo9GeuKVu/4hDe9DOAmr501lQ86PfKL5OmqZcieydpWW6nTfuNY5igfcN49HjqzxjqTgYpLjVZTw+lB/a8pAGfr8vHqzw/bCoWOW6u6YBwJ2PsOE9U+iacwLE=,iv:L5QQj1MvWavJNYeCaneT8rTeLXjIHeS4Vza9oTbM0Zw=,tag:L2dB+Z3jSKEH7dUcSMPQ6A==,type:str]
+    encrypted_regex: (?i)^(.*(?:key|token|pass(word)?|secret|email|domain(s)?|username|deviceid).*)$
+    version: 3.10.2

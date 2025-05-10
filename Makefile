@@ -1,4 +1,4 @@
-.PHONY: help confirm up start stop restart logs status ps clean
+.PHONY: help confirm up start new stop restart logs status ps clean
 
 # Copypasta from https://github.com/krom/docker-compose-makefile
 
@@ -25,18 +25,13 @@ HELP_FMT = \
 	print "\n"; }
 
 #DEFAULT variables
-ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-DOCKER_COMPOSE := docker compose
-DOCKER_COMPOSE_FILE := $(ROOT_DIR)/docker-compose.yaml
-SYSTEMD_UNIT := $(ROOT_DIR)/stargate.service
-EXTRA_UP_ARGS := --remove-orphans
 
 install: ##@other Start and enable service
 	@apt update
 	@apt install -y curl
 	@bash scripts/install-packages.sh
 	@bash scripts/install-docker.sh
-	@ln -sf $(SYSTEMD_UNIT) /etc/systemd/system/stargate.service
+	@ln -sf stargate.service /etc/systemd/system/stargate.service
 	@systemctl daemon-reload
 	@systemctl start stargate
 	@systemctl enable stargate
@@ -51,29 +46,29 @@ help: ##@other Show this help
 confirm:
 	@( read -p "$(RED)Are you sure? [y/N]$(RESET): " sure && case "$$sure" in [yY]) true;; *) false;; esac )
 
-up: ## Start all containers in foreground
-	@$(DOCKER_COMPOSE) up
+up: check ## Start all containers in foreground
+	@sops --decrypt docker-compose.yaml | docker compose -f - up
 
 start: ## Start all containers in background
-	@$(DOCKER_COMPOSE) up -d $(EXTRA_UP_ARGS)
+	@sops --decrypt docker-compose.yaml | docker compose -f - up -d --remove-orphans
 
 new: ## Start all containers anew
-	@$(DOCKER_COMPOSE) up -d $(EXTRA_UP_ARGS) --force-recreate
+	@sops --decrypt docker-compose.yaml | docker compose -f - up -d --remove-orphans --force-recreate
 
 stop: ## Stop all containers
-	@$(DOCKER_COMPOSE) stop
+	@sops --decrypt docker-compose.yaml | docker compose -f - stop
 
 restart: ## Stop and start all containers in background
-	@$(DOCKER_COMPOSE) stop
-	@$(DOCKER_COMPOSE) up -d $(EXTRA_UP_ARGS)
+	@sops --decrypt docker-compose.yaml | docker compose -f - stop
+	@sops --decrypt docker-compose.yaml | docker compose -f - up -d --remove-orphans
 
 logs: ## Tail logs of all containers
-	@$(DOCKER_COMPOSE) logs -f
+	@sops --decrypt docker-compose.yaml | docker compose -f - logs -f
 
 status: ## List all containers
-	@$(DOCKER_COMPOSE) ps
+	@sops --decrypt docker-compose.yaml | docker compose -f - ps
 
 ps: status
 
 clean: confirm ## Delete all containers
-	@$(DOCKER_COMPOSE) down -v
+	@sops --decrypt docker-compose.yaml | docker compose -f - down -v

@@ -1,3 +1,4 @@
+*.agekey
 *.bak
 *.crt
 *.db
@@ -22,7 +23,7 @@ acme.json
 cli_pw
 config_backups
 dhcp.leases
-docker/adguard/work/data
+docker/adguard
 gravity_backups
 gravity.db_temp*
 keys.json

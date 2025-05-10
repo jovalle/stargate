@@ -12,7 +12,7 @@ Provides a warp link strong enough to call ships to a planet's surface
 
 Homelab essential services (DNS, DHCP, etc.)
 
-An extention of [Mothership](https://github.com/jovalle/mothership).
+An extension of [Mothership](https://github.com/jovalle/mothership).
 
 ## 🧰 Components
 
@@ -30,29 +30,4 @@ An extention of [Mothership](https://github.com/jovalle/mothership).
 
 ## 📋 Environment Variables
 
-Docker compose services inherit the following env vars (update yours accordingly):
-
-```sh
-# common
-ADMIN_PASSWORD=""
-ADMIN_PASSWORD_HASH=""
-DOMAIN=""
-PGID=1000
-PUID=1000
-TZ=""
-
-# cloudflare
-CF_EMAIL=""
-CF_TOKEN=""
-CF_ZONE=""
-
-# cloudflared
-CLOUDFLARED_TOKEN=""
-
-# homepage
-PIHOLE_API_KEY=""
-PORTAINER_API_KEY=""
-
-# tailscale
-TS_AUTHKEY=""
-```
+A `.env` is no longer needed to store secrets. All secrets are now defined in `docker-compose.yaml` and encrypted in-line using `sops` and `age`.
