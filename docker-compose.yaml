@@ -20,7 +20,7 @@ services:
             homepage.href: https://stargate.${DOMAIN:-home.arpa}
             homepage.icon: adguard-home
             homepage.name: AdGuard Home (Primary)
-            homepage.widget.password: ENC[AES256_GCM,data:OEe++0zfxmtkZpFzEEJCRkA=,iv:mss85O2bVkh8jWFCoDuM4eGNmQpyJ2ztgWL6twI3Gfw=,tag:Govt6yB82zqvwLebrquNpA==,type:str]
+            homepage.widget.password: ENC[AES256_GCM,data:CYadFxrqvl0YT6PV0WjswyHB5AQ=,iv:NF0nScHi3AybyDH5CoW3QtPQdYy52ZvS7c24m4La42g=,tag:PDoPaBTzOFcI/l+dAJCHAA==,type:str]
             homepage.widget.type: adguard
             homepage.widget.url: https://stargate.${DOMAIN:-home.arpa}
             homepage.widget.username: ENC[AES256_GCM,data:SOyd9eY=,iv:4fVpyKGm671AChVBoNpLcj7etnmEydu0qFE5SIM8p5Q=,tag:TmJr4QtZFPQhiSYB8bfkAA==,type:str]
@@ -56,7 +56,7 @@ services:
             homepage.href: https://starport.${DOMAIN:-home.arpa}
             homepage.icon: adguard-home
             homepage.name: AdGuard Home (Replica)
-            homepage.widget.password: ENC[AES256_GCM,data:hnN/iKoqtMamFa6at9xesXQ=,iv:1B2qolvJeVmla22q0D5gcwSOA2wTXMwkmGa8HbsSE88=,tag:bsHrsDz4ARLsvn/WqzY/wQ==,type:str]
+            homepage.widget.password: ENC[AES256_GCM,data:u8tf8WQG77yTefyq5Yei2BGKC68=,iv:364GzbLtDbKYtI3pE9vIYykdchvzjn8G2jkMWoFiPE8=,tag:cRLKyWz6D74odYR6or9FjQ==,type:str]
             homepage.widget.type: adguard
             homepage.widget.url: https://starport.${DOMAIN:-home.arpa}
             homepage.widget.username: ENC[AES256_GCM,data:UdeEc7A=,iv:ouHDoDOHHvSoagufNGPPPwQtjrqZtpU/ol2kwpvXcr0=,tag:4Jxcsi8M7qkr2faHiAApDw==,type:str]
@@ -306,7 +306,7 @@ sops:
             ZCtwbk1LM0RkME5kdTg1bExndlhOTjQKXQ9zcJ+pGnclUh23MnOkfz4/VCzD0j6x
             CtgDwm1WQoPgekdCgnfhSHES0g7o3h7sdyCV6tB5pqtNpZp+3wGV5w==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2025-05-10T22:43:41Z"
-    mac: ENC[AES256_GCM,data:eOFbxQudC4dywlPX8v0W8HAWjqdy5dnorYEIcmSKF31S9+QcZEDo9GeuKVu/4hDe9DOAmr501lQ86PfKL5OmqZcieydpWW6nTfuNY5igfcN49HjqzxjqTgYpLjVZTw+lB/a8pAGfr8vHqzw/bCoWOW6u6YBwJ2PsOE9U+iacwLE=,iv:L5QQj1MvWavJNYeCaneT8rTeLXjIHeS4Vza9oTbM0Zw=,tag:L2dB+Z3jSKEH7dUcSMPQ6A==,type:str]
+    lastmodified: "2025-05-12T16:19:24Z"
+    mac: ENC[AES256_GCM,data:RwSZNnvce1N3YyDKmiUnf7u+AiaCsFLOaRP041QZxqzFLmH0k/maZql/WctcAbJ6IXYwqEcoas8GQdksigC5xqGzjC4jLcMtW5eR6eBhwtXuvLXcC/qCgN0krfvwpIWDN3uRlrN4bZArR8HM0PpvHZyz2W+c8CUeTWgBJGJTTdY=,iv:di4QIzvHBRordvkdzrYZXCrSB0NxvyDjmMci+kwE1ng=,tag:CSn9e5YppOMnEpMvht+T6w==,type:str]
     encrypted_regex: (?i)^(.*(?:key|token|pass(word)?|secret|email|domain(s)?|username|deviceid).*)$
     version: 3.10.2

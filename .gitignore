@@ -1,9 +1,14 @@
+_actions
+_PipelineMapping
+.env
+.secrets
 *.agekey
 *.bak
 *.crt
 *.db
 *.db-shm
 *.db-wal
+*.decrypted*
 *.domains
 *.gsb
 *.gz
@@ -15,10 +20,6 @@
 *.sqlite
 *.sqlite3
 *.swp
-.env
-.secrets
-_PipelineMapping
-_actions
 acme.json
 cli_pw
 config_backups
