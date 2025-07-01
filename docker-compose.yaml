@@ -4,107 +4,133 @@ networks:
       config:
         - subnet: 172.52.0.0/16
 services:
+  adguard:
+    container_name: adguard
+    dns:
+      - 76.76.2.2
+      - 76.76.10.2
+    hostname: adguard
+    image: adguard/adguardhome
+    labels:
+      homepage.description: Ad-Blocking DNS Server
+      homepage.group: Core
+      homepage.href: https://stargate.${DOMAIN:?no domain provided}
+      homepage.icon: adguard-home
+      homepage.name: AdGuard Home (Primary)
+      homepage.widget.password: ${ADMIN_PASSWORD:?no admin password provided}
+      homepage.widget.type: adguard
+      homepage.widget.url: https://stargate.${DOMAIN:?no domain provided}
+      homepage.widget.username: ${ADMIN_USERNAME:?no admin username provided}
+      traefik.enable: true
+      traefik.http.routers.adguard.entrypoints: websecure
+      traefik.http.routers.adguard.rule: Host(`adguard.stargate.${DOMAIN:?no domain provided}`) || Host(`stargate.${DOMAIN:?no domain provided}`)
+      traefik.http.routers.adguard.tls: true
+      traefik.http.services.adguard.loadbalancer.server.port: 80
+    networks:
+      backend:
+        ipv4_address: 172.52.0.10
+      default: {}
+    ports:
+      - 53:53/tcp
+      - 53:53/udp
+      - 853:853/tcp
+      - 853:853/udp
+      - 3000:3000/tcp
+      - 5443:5443/tcp
+      - 5443:5443/udp
+      - 6060:6060/tcp
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/adguard/conf:/opt/adguardhome/conf
+      - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
+  adguardhome-sync:
+    command: run --config /config/adguardhome-sync.yaml
+    container_name: adguardhome-sync
+    image: ghcr.io/bakito/adguardhome-sync
+    ports:
+      - 8081:8080
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
   cloudflared:
-    command: "tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN}"
+    command: tunnel --no-autoupdate run
     container_name: cloudflared
-    env_file: .env
-    image: cloudflare/cloudflared:latest
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARED_TOKEN:?no cloudflared token provided}
+    image: cloudflare/cloudflared
     restart: unless-stopped
   ddns:
     cap_drop:
       - all
     container_name: ddns
-    env_file: .env
     environment:
-      CLOUDFLARE_API_TOKEN: "${CF_API_TOKEN}"
-      DOMAINS: "${CF_DOMAINS}"
-      PROXIED: "false"
-    image: favonia/cloudflare-ddns:latest
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
+      DOMAINS: gateway.${DOMAIN:?no domain provided}
+      IP6_PROVIDER: none
+      PROXIED: false
+    image: favonia/cloudflare-ddns
     network_mode: host
     read_only: true
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    user: "1000:1000"
+    user: 1000:1000
   ddns-proxied:
     cap_drop:
       - all
     container_name: ddns-proxied
-    env_file: .env
     environment:
-      CLOUDFLARE_API_TOKEN: "${CF_API_TOKEN}"
-      DOMAINS: "${CF_PROXIED_DOMAINS}"
-      PROXIED: "true"
-    image: favonia/cloudflare-ddns:latest
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
+      DOMAINS: "*.${DOMAIN_EXT:?no external domain provided}"
+      IP6_PROVIDER: none
+      PROXIED: true
+    image: favonia/cloudflare-ddns
     network_mode: host
     read_only: true
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
-    user: "1000:1000"
+    user: 1000:1000
   docker-socket-proxy:
     container_name: docker-socket-proxy
     environment:
-      - CONTAINERS=1
-      - POST=0
-      - SERVICES=1
-      - TASKS=1
+      CONTAINERS: 1
+      POST: 0
+      SERVICES: 1
+      TASKS: 1
     image: ghcr.io/tecnativa/docker-socket-proxy
     ports:
       - 0.0.0.0:2375:2375
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-  nebula-sync:
-    container_name: nebula-sync
-    env_file: .env
-    environment:
-      - PRIMARY=https://stargate.techn.is|${ADMIN_PASSWORD}
-      - REPLICAS=https://starport.techn.is|${ADMIN_PASSWORD}
-      - FULL_SYNC=true
-      - RUN_GRAVITY=true
-      - CRON=0 * * * *
-    hostname: nebula-sync
-    image: ghcr.io/lovelaze/nebula-sync
-    labels:
-      - homepage.description=(Secondary) DNS Ad-Blocking and DHCP Server
-      - homepage.group=Core
-      - homepage.href=https://starport.${DOMAIN}/admin
-      - homepage.icon=pi-hole
-      - homepage.name=PiHole 2 (Starport)
-      - homepage.widget.key=${ADMIN_PASSWORD}
-      - homepage.widget.type=pihole
-      - homepage.widget.url=https://starport
-      - homepage.widget.version=6
-    restart: unless-stopped
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
-    env_file: .env
     hostname: nginx-proxy-manager
     image: jc21/nginx-proxy-manager
     labels:
-      - homepage.description=Reverse Proxy
-      - homepage.group=Core
-      - homepage.href=https://npm.stargate.${DOMAIN}
-      - homepage.icon=nginx-proxy-manager
-      - homepage.name=Nginx Proxy Manager
-      - homepage.widget.password=${NPM_PASSWORD}
-      - homepage.widget.type=npm
-      - homepage.widget.url=http://stargate:81
-      - homepage.widget.username=${NPM_EMAIL}
-      - traefik.enable=true
-      - traefik.http.routers.nginx-proxy-manager.entrypoints=websecure
-      - traefik.http.routers.nginx-proxy-manager.rule=Host(`npm.stargate.${DOMAIN}`)
-      - traefik.http.routers.nginx-proxy-manager.tls=true
-      - traefik.http.services.nginx-proxy-manager.loadbalancer.server.port=81
+      homepage.description: Reverse Proxy
+      homepage.group: Core
+      homepage.href: https://npm.stargate.${DOMAIN:?no domain provided}
+      homepage.icon: nginx-proxy-manager
+      homepage.name: Nginx Proxy Manager
+      homepage.widget.password: ${ADMIN2_PASSWORD}
+      homepage.widget.type: npm
+      homepage.widget.url: http://stargate:81
+      homepage.widget.username: ${ADMIN_EMAIL}
+      traefik.enable: true
+      traefik.http.routers.nginx-proxy-manager.entrypoints: websecure
+      traefik.http.routers.nginx-proxy-manager.rule: Host(`npm.stargate.${DOMAIN:?no domain provided}`)
+      traefik.http.routers.nginx-proxy-manager.tls: true
+      traefik.http.services.nginx-proxy-manager.loadbalancer.server.port: 81
     ports:
       - 80:80
       - 81:81
       - 443:443
     restart: unless-stopped
     volumes:
-      - /etc/stargate/docker/nginx-proxy-manager:/data
-      - /etc/stargate/docker/letsencrypt:/etc/letsencrypt
+      - ${CONFIG_PATH:-./docker}/nginx-proxy-manager:/data
+      - ${CONFIG_PATH:-./docker}/letsencrypt:/etc/letsencrypt
   node-exporter:
     command: --path.rootfs=/host
     container_name: node-exporter
@@ -114,103 +140,32 @@ services:
     restart: unless-stopped
     volumes:
       - /:/host:ro,rslave
-  pihole:
-    cap_add:
-      - CAP_SYS_NICE # NTP
-      - CAP_SYS_TIME # CPU prio
-      - NET_ADMIN # net conf
-    container_name: pihole
-    dns:
-      - 76.76.2.2
-      - 76.76.10.2
-    env_file: .env
-    environment:
-      FTLCONF_dns_listeningMode: 'all'
-      FTLCONF_dns_upstreams: '76.76.2.2;76.76.10.2'
-      FTLCONF_webserver_api_password: "${ADMIN_PASSWORD}"
-      FTLCONF_webserver_port: '8081,8444s'
-    hostname: pihole
-    image: pihole/pihole:latest
-    labels:
-      - homepage.description=DNS Ad-Blocking and DHCP server
-      - homepage.group=Core
-      - homepage.href=https://stargate.${DOMAIN}/admin
-      - homepage.icon=pi-hole
-      - homepage.name=PiHole 1 (Stargate)
-      - homepage.widget.key=${ADMIN_PASSWORD}
-      - homepage.widget.type=pihole
-      - homepage.widget.url=https://stargate:8444
-      - homepage.widget.version=6
-      - traefik.enable=true
-      - traefik.http.routers.pihole.entrypoints=websecure
-      - traefik.http.routers.pihole.rule=Host(`stargate.${DOMAIN}`)
-      - traefik.http.routers.pihole.tls=true
-      - traefik.http.services.pihole.loadbalancer.server.port=8081
-    networks:
-      backend:
-        ipv4_address: "172.52.0.10"
-      default: {}
-    ports:
-      - 53:53/tcp
-      - 53:53/udp
-      - 8444:8444
-    restart: unless-stopped
-    volumes:
-      - /etc/stargate/docker/dnsmasq.d:/etc/dnsmasq.d
-      - /etc/stargate/docker/pihole:/etc/pihole
-  portainer:
-    command: -H unix:///var/run/docker.sock --admin-password "${ADMIN_PASSWORD_HASH}"
-    container_name: portainer
-    env_file: .env
-    hostname: portainer
-    image: portainer/portainer-ce
-    labels:
-      - homepage.description=Container management
-      - homepage.group=Stargate
-      - homepage.href=https://portainer.stargate.${DOMAIN}
-      - homepage.icon=portainer
-      - homepage.name=Portainer
-      - homepage.widget.env=1
-      - homepage.widget.fields=["running", "stopped", "total"]
-      - homepage.widget.key=${PORTAINER_API_KEY}
-      - homepage.widget.type=portainer
-      - homepage.widget.url=http://stargate:9000
-      - traefik.enable=true
-      - traefik.http.routers.portainer.entrypoints=websecure
-      - traefik.http.routers.portainer.rule=Host(`portainer.stargate.${DOMAIN}`)
-      - traefik.http.routers.portainer.tls=true
-      - traefik.http.services.portainer.loadbalancer.server.port=9000
-    ports:
-      - 9000:9000
-    volumes:
-      - /etc/stargate/docker/portainer:/data
-      - /var/run/docker.sock:/var/run/docker.sock
   tailscale:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
     container_name: tailscale
-    env_file: .env
     environment:
-      TS_EXTRA_ARGS: '--advertise-exit-node'
+      TS_AUTH_KEY: ${TAILSCALE_AUTH_KEY:?no tailscale auth key provided}
+      TS_EXTRA_ARGS: --advertise-exit-node
       TS_HOSTNAME: stargate
       TS_ROUTES: 192.168.31.0/24
       TS_STATE_DIR: /var/lib/tailscale
-      TS_USERSPACE: "false"
-    image: tailscale/tailscale:latest
+      TS_USERSPACE: false
+    image: tailscale/tailscale
     labels:
-      - homepage.description=Private WireGuard Network
-      - homepage.group=Core
-      - homepage.href=https://login.tailscale.com/admin/machines
-      - homepage.icon=tailscale
-      - homepage.name=Tailscale
-      - homepage.widget.key=${TS_APIKEY}
-      - homepage.widget.type=tailscale
-      - homepage.widget.deviceid=${TS_DEVID}
+      homepage.description: Private WireGuard Network
+      homepage.group: Core
+      homepage.href: https://login.tailscale.com/admin/machines
+      homepage.icon: tailscale
+      homepage.name: Tailscale
+      homepage.widget.deviceid: ${TAILSCALE_DEVICE_ID:?device ID required on new devices}
+      homepage.widget.key: ${TAILSCALE_DEVICE_KEY:?no device key provided}
+      homepage.widget.type: tailscale
     restart: unless-stopped
     volumes:
       - /dev/net/tun:/dev/net/tun
-      - /etc/stargate/docker/tailscale:/var/lib/tailscale
+      - ${CONFIG_PATH:-./docker}/tailscale:/var/lib/tailscale
   traefik:
     command:
       - --api.dashboard=true
@@ -224,36 +179,35 @@ services:
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
-      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN},*.${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN:?no domain provided}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN:?no domain provided},*.${DOMAIN:?no domain provided}
       - --entrypoints.websecure.http.tls=true
       - --log.level=DEBUG
       - --providers.docker.exposedbydefault=true
       - --providers.docker=true
       - --serverstransport.insecureskipverify=true
     container_name: traefik
-    env_file: .env
     environment:
-      CLOUDFLARE_DNS_API_TOKEN: "${CF_API_TOKEN}"
-      CLOUDFLARE_EMAIL: "${CF_EMAIL}"
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: "${CF_EMAIL}"
+      CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
+      CLOUDFLARE_EMAIL: ${CLOUDFLARE_EMAIL:?no cloudflare email provided}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${CLOUDFLARE_EMAIL:?no cloudflare email provided}
     extra_hosts:
       - host.docker.internal:172.17.0.1
     hostname: traefik
     image: traefik
     labels:
-      - homepage.description=Reverse proxy for exposing apps via HTTPS
-      - homepage.group=Stargate
-      - homepage.href=https://traefik.stargate.${DOMAIN}
-      - homepage.icon=traefik
-      - homepage.name=Traefik
-      - homepage.widget.type=traefik
-      - homepage.widget.url=http://stargate:8888
-      - traefik.enable=true
-      - traefik.http.routers.dashboard.entrypoints=websecure
-      - traefik.http.routers.dashboard.rule=Host(`traefik.stargate.${DOMAIN}`)
-      - traefik.http.routers.dashboard.service=api@internal
-      - traefik.http.routers.dashboard.tls=true
+      homepage.description: Reverse proxy for exposing apps via HTTPS
+      homepage.group: Stargate
+      homepage.href: https://traefik.stargate.${DOMAIN:?no domain provided}
+      homepage.icon: traefik
+      homepage.name: Traefik
+      homepage.widget.type: traefik
+      homepage.widget.url: http://stargate:8888
+      traefik.enable: true
+      traefik.http.routers.dashboard.entrypoints: websecure
+      traefik.http.routers.dashboard.rule: Host(`traefik.stargate.${DOMAIN:?no domain provided}`)
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.tls: true
     networks:
       backend: {}
       default: {}
@@ -263,38 +217,38 @@ services:
       - 8888:8080
     restart: unless-stopped
     volumes:
-      - /etc/stargate/docker/letsencrypt/acme.json:/etc/traefik/acme.json
+      - ${CONFIG_PATH:-./docker}/letsencrypt/acme.json:/etc/traefik/acme.json
       - /var/run/docker.sock:/var/run/docker.sock
   uptime-kuma:
     container_name: uptime-kuma
     hostname: uptime-kuma
     image: louislam/uptime-kuma:1
     labels:
-      - homepage.description=Component Health Tracking and Alerting
-      - homepage.group=Core
-      - homepage.href=https://status.${DOMAIN}
-      - homepage.icon=uptime-kuma
-      - homepage.name=Uptime Kuma
-      - homepage.widget.slug=technis
-      - homepage.widget.type=uptimekuma
-      - homepage.widget.url=http://stargate:3001
-      - traefik.enable=true
-      - traefik.http.routers.uptime-kuma.entrypoints=websecure
-      - traefik.http.routers.uptime-kuma.rule=Host(`status.stargate.${DOMAIN}`)
-      - traefik.http.routers.uptime-kuma.tls=true
-      - traefik.http.services.uptime-kuma.loadbalancer.server.port=3001
+      homepage.description: Component Health Tracking and Alerting
+      homepage.group: Core
+      homepage.href: https://status.${DOMAIN:?no domain provided}
+      homepage.icon: uptime-kuma
+      homepage.name: Uptime Kuma
+      homepage.widget.slug: technis
+      homepage.widget.type: uptimekuma
+      homepage.widget.url: http://stargate:3001
+      traefik.enable: true
+      traefik.http.routers.uptime-kuma.entrypoints: websecure
+      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.stargate.${DOMAIN:?no domain provided}`) || Host(`status.${DOMAIN:?no domain provided}`)
+      traefik.http.routers.uptime-kuma.tls: true
+      traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:
       - 3001:3001
     restart: unless-stopped
     volumes:
-      - /etc/stargate/docker/uptime-kuma:/app/data
+      - ${CONFIG_PATH:-./docker}/uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
   watchtower:
     container_name: watchtower
-    env_file: .env
     environment:
-      WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_DEBUG: "true"
-      WATCHTOWER_SCHEDULE: "0 0 1 * * *"
+      WATCHTOWER_CLEANUP: true
+      WATCHTOWER_DEBUG: true
+      WATCHTOWER_SCHEDULE: 0 0 1 * * *
     image: containrrr/watchtower
     restart: unless-stopped
     volumes:
