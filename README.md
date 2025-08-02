@@ -22,6 +22,7 @@ Homelab essential services (DNS, DHCP, etc.)
 - [Docker Socket Proxy](https://github.com/Tecnativa/docker-socket-proxy): Secured proxy for Homepage to watch Docker.
 - [Nginx Proxy Manager](https://nginxproxymanager.com/): Network-wide reverse proxying.
 - [Node Exporter](https://github.com/prometheus/node_exporter): Presents host resource metrics to be consumed by Prometheus and displayed by Grafana.
+- [Orb](https://orb.net): Continuous network performance and health monitoring.
 - [Tailscale](https://tailscale.com): WireGuard powered, infrastructure agnostic, VPN service.
 - [Traefik](https://traefik.io): Reverse proxy for serving other components with HTTPS enabled URLs. Using Let's Encrypt for quick and easy HTTPS certificates.
 - [Uptime Kuma](https://github.com/louislam/uptime-kuma): Monitoring dashboard and alerting for internal and external endpoints.

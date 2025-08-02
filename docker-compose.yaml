@@ -150,6 +150,16 @@ services:
     restart: unless-stopped
     volumes:
       - /:/host:ro,rslave
+  orb:
+    container_name: orb
+    image: orbforge/orb
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+      com.centurylinklabs.watchtower.scope: orb
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/orb:/root/.config/orb
   tailscale:
     cap_add:
       - NET_ADMIN
