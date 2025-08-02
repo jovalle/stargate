@@ -52,6 +52,16 @@ services:
     restart: unless-stopped
     volumes:
       - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
+  beszel-agent:
+    container_name: beszel-agent
+    environment:
+      KEY: ${BESZEL_KEY:?no beszel key provided}
+      LISTEN: 45876
+    image: henrygd/beszel-agent
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   cloudflared:
     command: tunnel --no-autoupdate run
     container_name: cloudflared

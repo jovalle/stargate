@@ -16,6 +16,7 @@ Homelab essential services (DNS, DHCP, etc.)
 
 - [AdGuard Home](https://github.com/AdguardTeam/Adguardhome): Network-wide ad blocking via built-in DNS. Replaces [Pi-Hole](https://pi-hole.net).
 - [AdGuardHome Sync](https://github.com/bakito/adguardhome-sync): Synchronizes instances of AdGuard Home for HA deployments.
+- [Beszel Agent](https://www.beszel.dev/): Lightweight server monitoring.
 - [Cloudflare DDNS](https://hub.docker.com/r/oznu/cloudflare-ddns/): Dynamic DNS client for updating upstream DNS records.
 - [Cloudflared](https://github.com/cloudflare/cloudflared): Cloudflare tunnel for remote access without exposing ports on WAN.
 - [Docker Socket Proxy](https://github.com/Tecnativa/docker-socket-proxy): Secured proxy for Homepage to watch Docker.
@@ -35,6 +36,7 @@ ADMIN_EMAIL="REDACTED"
 ADMIN_PASSWORD="REDACTED"
 ADMIN_USERNAME="REDACTED"
 ADMIN2_PASSWORD="REDACTED"
+BESZEL_KEY="REDACTED"
 CLOUDFLARE_API_TOKEN="REDACTED"
 CLOUDFLARE_EMAIL="REDACTED"
 CLOUDFLARED_TOKEN="REDACTED"
