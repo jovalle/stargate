@@ -25,9 +25,7 @@ acme.json
 cli_pw
 config_backups
 dhcp.leases
-docker/adguard
-docker/nginx-proxy-manager/letsencrypt-acme-challenge
-docker/nginx-proxy-manager/logs
+docker
 gravity_backups
 gravity.db_temp*
 id_*
