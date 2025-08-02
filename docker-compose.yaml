@@ -39,16 +39,16 @@ services:
       - 5443:5443/tcp
       - 5443:5443/udp
       - 6060:6060/tcp
+      - 8843:443/tcp
+      - 8880:80/tcp
     restart: unless-stopped
     volumes:
       - ${CONFIG_PATH:-./docker}/adguard/conf:/opt/adguardhome/conf
       - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
-  adguardhome-sync:
+  adguard-sync:
     command: run --config /config/adguardhome-sync.yaml
     container_name: adguardhome-sync
     image: ghcr.io/bakito/adguardhome-sync
-    ports:
-      - 8081:8080
     restart: unless-stopped
     volumes:
       - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
@@ -197,12 +197,12 @@ services:
     image: traefik
     labels:
       homepage.description: Reverse proxy for exposing apps via HTTPS
-      homepage.group: Stargate
+      homepage.group: Core
       homepage.href: https://traefik.stargate.${DOMAIN:?no domain provided}
       homepage.icon: traefik
-      homepage.name: Traefik
+      homepage.name: Traefik (Stargate)
       homepage.widget.type: traefik
-      homepage.widget.url: http://stargate:8888
+      homepage.widget.url: http://stargate:8081
       traefik.enable: true
       traefik.http.routers.dashboard.entrypoints: websecure
       traefik.http.routers.dashboard.rule: Host(`traefik.stargate.${DOMAIN:?no domain provided}`)
@@ -213,8 +213,8 @@ services:
       default: {}
     ports:
       - 8080:80
+      - 8081:8080
       - 8443:443
-      - 8888:8080
     restart: unless-stopped
     volumes:
       - ${CONFIG_PATH:-./docker}/letsencrypt/acme.json:/etc/traefik/acme.json
