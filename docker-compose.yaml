@@ -117,7 +117,7 @@ services:
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
     hostname: nginx-proxy-manager
-    image: jc21/nginx-proxy-manager
+    image: jc21/nginx-proxy-manager:2
     labels:
       homepage.description: Reverse Proxy
       homepage.group: Core
