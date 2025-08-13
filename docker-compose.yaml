@@ -114,6 +114,14 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+  golink:
+    container_name: golink
+    environment:
+      TS_AUTH_KEY: ${TAILSCALE_AUTH_KEY:?no tailscale auth key provided}
+    image: ghcr.io/tailscale/golink:main
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/golink:/home/nonroot # chown 65532:65532
   nginx-proxy-manager:
     container_name: nginx-proxy-manager
     hostname: nginx-proxy-manager
@@ -165,11 +173,14 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     container_name: tailscale
+    devices:
+      - /dev/net/tun:/dev/net/tun
     environment:
       TS_AUTH_KEY: ${TAILSCALE_AUTH_KEY:?no tailscale auth key provided}
+      TS_AUTH_ONCE: true
       TS_EXTRA_ARGS: --advertise-exit-node
       TS_HOSTNAME: stargate
-      TS_ROUTES: 192.168.31.0/24
+      TS_ROUTES: ${LAN_CIDR:-192.168.0.0/24}
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: false
     image: tailscale/tailscale
