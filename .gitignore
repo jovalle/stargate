@@ -25,6 +25,9 @@ acme.json
 cli_pw
 config_backups
 dhcp.leases
+docker/adguard/work
+docker/adguard/*/*.yaml
+docker/golink/.config
 docker/traefik/dynamic.yaml
 gravity_backups
 gravity.db_temp*

@@ -1,0 +1,311 @@
+http:
+  pprof:
+    port: 6060
+    enabled: false
+  address: 0.0.0.0:80
+  session_ttl: 720h
+users:
+  - name: admin
+    password: ${ADGUARD_ADMIN_PASSWORD_HASHED}
+auth_attempts: 5
+block_auth_min: 15
+http_proxy: ""
+language: ""
+theme: auto
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 53
+  anonymize_client_ip: false
+  ratelimit: 0
+  ratelimit_subnet_len_ipv4: 24
+  ratelimit_subnet_len_ipv6: 56
+  ratelimit_whitelist: []
+  refuse_any: true
+  upstream_dns:
+    - '[//]192.168.0.1'
+    - 1.1.1.1
+    - 1.0.0.1
+    - 8.8.8.8
+    - 8.8.4.4
+  upstream_dns_file: ""
+  bootstrap_dns:
+    - 9.9.9.10
+    - 149.112.112.10
+    - 2620:fe::10
+    - 2620:fe::fe:10
+  fallback_dns: []
+  upstream_mode: parallel
+  fastest_timeout: 1s
+  allowed_clients: []
+  disallowed_clients: []
+  blocked_hosts:
+    - version.bind
+    - id.server
+    - hostname.bind
+  trusted_proxies:
+    - 127.0.0.0/8
+    - ::1/128
+  cache_enabled: true
+  cache_size: 4194304
+  cache_ttl_min: 0
+  cache_ttl_max: 0
+  cache_optimistic: false
+  bogus_nxdomain: []
+  aaaa_disabled: false
+  enable_dnssec: false
+  edns_client_subnet:
+    custom_ip: ""
+    enabled: false
+    use_custom: false
+  max_goroutines: 300
+  handle_ddr: true
+  ipset: []
+  ipset_file: ""
+  bootstrap_prefer_ipv6: false
+  upstream_timeout: 10s
+  private_networks: []
+  use_private_ptr_resolvers: false
+  local_ptr_upstreams: []
+  use_dns64: false
+  dns64_prefixes: []
+  serve_http3: false
+  use_http3_upstreams: false
+  serve_plain_dns: true
+  hostsfile_enabled: true
+  pending_requests:
+    enabled: true
+tls:
+  enabled: false
+  server_name: ""
+  force_https: false
+  port_https: 443
+  port_dns_over_tls: 853
+  port_dns_over_quic: 853
+  port_dnscrypt: 0
+  dnscrypt_config_file: ""
+  allow_unencrypted_doh: false
+  certificate_chain: ""
+  private_key: ""
+  certificate_path: ""
+  private_key_path: ""
+  strict_sni_check: false
+querylog:
+  dir_path: ""
+  ignored: []
+  interval: 2160h
+  size_memory: 1000
+  enabled: true
+  file_enabled: true
+statistics:
+  dir_path: ""
+  ignored: []
+  interval: 24h
+  enabled: true
+filters:
+  - enabled: false
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+  - enabled: false
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_2.txt
+    name: AdAway Default Blocklist
+    id: 2
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_49.txt
+    name: HaGeZi's Ultimate Blocklist
+    id: 1746800694
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_47.txt
+    name: HaGeZi's Gambling Blocklist
+    id: 1746800696
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_61.txt
+    name: HaGeZi's Samsung Tracker Blocklist
+    id: 1746800697
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_63.txt
+    name: HaGeZi's Windows/Office Tracker Blocklist
+    id: 1746800698
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_60.txt
+    name: HaGeZi's Xiaomi Tracker Blocklist
+    id: 1746800699
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_29.txt
+    name: 'CHN: AdRules DNS List'
+    id: 1746800700
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_21.txt
+    name: 'CHN: anti-AD'
+    id: 1746800701
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_35.txt
+    name: 'HUN: Hufilter'
+    id: 1746800702
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_22.txt
+    name: 'IDN: ABPindo'
+    id: 1746800703
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_19.txt
+    name: 'IRN: PersianBlocker list'
+    id: 1746800704
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_43.txt
+    name: 'ISR: EasyList Hebrew'
+    id: 1746800705
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_41.txt
+    name: 'POL: CERT Polska List of malicious domains'
+    id: 1746800706
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_25.txt
+    name: 'KOR: List-KR DNS'
+    id: 1746800707
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_15.txt
+    name: 'KOR: YousList'
+    id: 1746800708
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_36.txt
+    name: 'LIT: EasyList Lithuania'
+    id: 1746800709
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_20.txt
+    name: 'MKD: Macedonian Pi-hole Blocklist'
+    id: 1746800710
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_13.txt
+    name: 'NOR: Dandelion Sprouts nordiske filtre'
+    id: 1746800711
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_14.txt
+    name: 'POL: Polish filters for Pi-hole'
+    id: 1746800712
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_17.txt
+    name: 'SWE: Frellwit''s Swedish Hosts File'
+    id: 1746800713
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_26.txt
+    name: 'TUR: turk-adlist'
+    id: 1746800714
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_40.txt
+    name: 'TUR: Turkish Ad Hosts'
+    id: 1746800715
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_16.txt
+    name: 'VNM: ABPVN List'
+    id: 1746800716
+whitelist_filters: []
+user_rules: []
+dhcp:
+  enabled: false
+  interface_name: ""
+  local_domain_name: lan
+  dhcpv4:
+    gateway_ip: ""
+    subnet_mask: ""
+    range_start: ""
+    range_end: ""
+    lease_duration: 86400
+    icmp_timeout_msec: 1000
+    options: []
+  dhcpv6:
+    range_start: ""
+    lease_duration: 86400
+    ra_slaac_only: false
+    ra_allow_slaac: false
+filtering:
+  blocking_ipv4: ""
+  blocking_ipv6: ""
+  blocked_services:
+    schedule:
+      time_zone: America/New_York
+    ids: []
+  protection_disabled_until: null
+  safe_search:
+    enabled: false
+    bing: true
+    duckduckgo: true
+    ecosia: true
+    google: true
+    pixabay: true
+    yandex: true
+    youtube: true
+  blocking_mode: default
+  parental_block_host: family-block.dns.adguard.com
+  safebrowsing_block_host: standard-block.dns.adguard.com
+  rewrites:
+    - domain: '*.${DOMAIN}'
+      answer: 192.168.0.2
+    - domain: ${DOMAIN}
+      answer: 192.168.0.2
+    - domain: nexus.${DOMAIN_INT}
+      answer: 192.168.0.100
+    - domain: '*.${DOMAIN_INT}'
+      answer: 192.168.0.1
+  safe_fs_patterns:
+    - /opt/AdGuardHome/userfilters/*
+  safebrowsing_cache_size: 1048576
+  safesearch_cache_size: 1048576
+  parental_cache_size: 1048576
+  cache_time: 30
+  filters_update_interval: 24
+  blocked_response_ttl: 10
+  filtering_enabled: true
+  parental_enabled: false
+  safebrowsing_enabled: false
+  protection_enabled: true
+clients:
+  runtime_sources:
+    whois: true
+    arp: true
+    rdns: true
+    dhcp: true
+    hosts: true
+  persistent:
+    - safe_search:
+        enabled: false
+        bing: true
+        duckduckgo: true
+        ecosia: true
+        google: true
+        pixabay: true
+        yandex: true
+        youtube: true
+      blocked_services:
+        schedule:
+          time_zone: UTC
+        ids: []
+      name: Bravia
+      ids:
+        - ac:80:0a:b6:43:80
+      tags: []
+      upstreams: []
+      uid: 0198fb83-cc80-7b78-89eb-bf4867e300cc
+      upstreams_cache_size: 0
+      upstreams_cache_enabled: false
+      use_global_settings: false
+      filtering_enabled: false
+      parental_enabled: false
+      safebrowsing_enabled: false
+      use_global_blocked_services: false
+      ignore_querylog: false
+      ignore_statistics: false
+log:
+  enabled: true
+  file: ""
+  max_backups: 0
+  max_size: 100
+  max_age: 3
+  compress: false
+  local_time: false
+  verbose: false
+os:
+  group: ""
+  user: ""
+  rlimit_nofile: 0
+schema_version: 30
