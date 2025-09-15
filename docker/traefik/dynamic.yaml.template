@@ -1,0 +1,40 @@
+# Traefik Dynamic Configuration
+# docker/traefik/dynamic.yaml:/etc/traefik/dynamic.yaml
+# This file is watched for changes and automatically reloaded by Traefik
+# Add your external services here that aren't managed by Docker
+
+http:
+  routers:
+    dashboard:
+      rule: Host(`traefik.stargate.${DOMAIN}`)
+      service: "api@internal"
+    fallback:
+      priority: 0
+      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      service: "nexus"
+    plex:
+      rule: "Host(`plex.${DOMAIN}`)"
+      service: "plex"
+    proxmox:
+      rule: "Host(`proxmox.${DOMAIN}`)"
+      service: "proxmox"
+    truenas:
+      rule: "Host(`truenas.${DOMAIN}`)"
+      service: "truenas"
+  services:
+    nexus:
+      loadBalancer:
+        servers:
+          - url: "https://${TRUENAS_HOST_IP}:8443"
+    plex:
+      loadBalancer:
+        servers:
+          - url: "https://${PLEX_HOST_IP}:32400"
+    proxmox:
+      loadBalancer:
+        servers:
+          - url: "https://${NEXUS_HOST_IP}:8006"
+    truenas:
+      loadBalancer:
+        servers:
+          - url: "https://${TRUENAS_HOST_IP}"

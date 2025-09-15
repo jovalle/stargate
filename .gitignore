@@ -25,7 +25,7 @@ acme.json
 cli_pw
 config_backups
 dhcp.leases
-docker
+docker/traefik/dynamic.yaml
 gravity_backups
 gravity.db_temp*
 id_*

@@ -47,7 +47,7 @@ services:
       - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
   adguard-sync:
     command: run --config /config/adguardhome-sync.yaml
-    container_name: adguardhome-sync
+    container_name: adguard-sync
     image: ghcr.io/bakito/adguardhome-sync
     restart: unless-stopped
     volumes:
@@ -122,33 +122,6 @@ services:
     restart: unless-stopped
     volumes:
       - ${CONFIG_PATH:-./docker}/golink:/home/nonroot # chown 65532:65532
-  nginx-proxy-manager:
-    container_name: nginx-proxy-manager
-    hostname: nginx-proxy-manager
-    image: jc21/nginx-proxy-manager:2
-    labels:
-      homepage.description: Reverse Proxy
-      homepage.group: Core
-      homepage.href: https://npm.stargate.${DOMAIN:?no domain provided}
-      homepage.icon: nginx-proxy-manager
-      homepage.name: Nginx Proxy Manager
-      homepage.widget.password: ${ADMIN2_PASSWORD}
-      homepage.widget.type: npm
-      homepage.widget.url: http://stargate:81
-      homepage.widget.username: ${ADMIN_EMAIL}
-      traefik.enable: true
-      traefik.http.routers.nginx-proxy-manager.entrypoints: websecure
-      traefik.http.routers.nginx-proxy-manager.rule: Host(`npm.stargate.${DOMAIN:?no domain provided}`)
-      traefik.http.routers.nginx-proxy-manager.tls: true
-      traefik.http.services.nginx-proxy-manager.loadbalancer.server.port: 81
-    ports:
-      - 80:80
-      - 81:81
-      - 443:443
-    restart: unless-stopped
-    volumes:
-      - ${CONFIG_PATH:-./docker}/nginx-proxy-manager:/data
-      - ${CONFIG_PATH:-./docker}/letsencrypt:/etc/letsencrypt
   node-exporter:
     command: --path.rootfs=/host
     container_name: node-exporter
@@ -204,7 +177,7 @@ services:
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
-      - --certificatesresolvers.letsencrypt.acme.storage=/etc/traefik/acme.json
+      - --certificatesresolvers.letsencrypt.acme.storage=/etc/letsencrypt/acme.json
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
       - --entrypoints.web.http.redirections.entryPoint.to=websecure
@@ -213,9 +186,11 @@ services:
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN:?no domain provided}
       - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN:?no domain provided},*.${DOMAIN:?no domain provided}
       - --entrypoints.websecure.http.tls=true
-      - --log.level=DEBUG
-      - --providers.docker.exposedbydefault=true
+      - --log.level=INFO
+      - --providers.docker.exposedbydefault=false
       - --providers.docker=true
+      - --providers.file.filename=/etc/traefik/dynamic.yaml
+      - --providers.file.watch=true
       - --serverstransport.insecureskipverify=true
     container_name: traefik
     environment:
@@ -235,20 +210,17 @@ services:
       homepage.widget.type: traefik
       homepage.widget.url: http://stargate:8081
       traefik.enable: true
-      traefik.http.routers.dashboard.entrypoints: websecure
-      traefik.http.routers.dashboard.rule: Host(`traefik.stargate.${DOMAIN:?no domain provided}`)
-      traefik.http.routers.dashboard.service: api@internal
-      traefik.http.routers.dashboard.tls: true
     networks:
       backend: {}
       default: {}
     ports:
-      - 8080:80
-      - 8081:8080
-      - 8443:443
+      - 80:80
+      - 443:443
+      - 8080:8080
     restart: unless-stopped
     volumes:
-      - ${CONFIG_PATH:-./docker}/letsencrypt/acme.json:/etc/traefik/acme.json
+      - ${CONFIG_PATH:-./docker}/letsencrypt:/etc/letsencrypt
+      - ${CONFIG_PATH:-./docker}/traefik:/etc/traefik
       - /var/run/docker.sock:/var/run/docker.sock
   uptime-kuma:
     container_name: uptime-kuma
@@ -265,7 +237,7 @@ services:
       homepage.widget.url: http://stargate:3001
       traefik.enable: true
       traefik.http.routers.uptime-kuma.entrypoints: websecure
-      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.stargate.${DOMAIN:?no domain provided}`) || Host(`status.${DOMAIN:?no domain provided}`)
+      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.stargate.${DOMAIN:?no domain provided}`) || Host(`status.${DOMAIN:?no domain provided}`) || Host(`status.${DOMAIN_EXT:?no external domain provided}`)
       traefik.http.routers.uptime-kuma.tls: true
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:
