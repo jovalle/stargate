@@ -6,11 +6,11 @@
 http:
   routers:
     dashboard:
-      rule: Host(`traefik.stargate.${DOMAIN}`)
+      rule: Host(`traefik.${DOMAIN}`)
       service: "api@internal"
     fallback:
       priority: 0
-      rule: "HostRegexp(`{subdomain:[a-z0-9-]+}.${DOMAIN}`)"
+      rule: "HostRegexp(`^[^.]+\\.${DOMAIN}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN}$`)"
       service: "nexus"
     plex:
       rule: "Host(`plex.${DOMAIN}`)"
