@@ -175,7 +175,7 @@ services:
       - --api.dashboard=true
       - --api.insecure=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
-      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.storage=/etc/letsencrypt/acme.json
       - --entrypoints.web.address=:80
@@ -209,7 +209,6 @@ services:
       homepage.name: Traefik (Stargate)
       homepage.widget.type: traefik
       homepage.widget.url: http://stargate:8081
-      traefik.enable: true
     networks:
       backend: {}
       default: {}

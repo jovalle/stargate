@@ -9,17 +9,17 @@ http:
       rule: Host(`traefik.${DOMAIN}`)
       service: "api@internal"
     fallback:
-      priority: 0
+      priority: -1
       rule: "HostRegexp(`^[^.]+\\.${DOMAIN}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN}$`)"
       service: "nexus"
     plex:
-      rule: "Host(`plex.${DOMAIN}`)"
+      rule: "Host(`plex.${DOMAIN}`) || Host(`watchtower.${DOMAIN}`)"
       service: "plex"
     proxmox:
-      rule: "Host(`proxmox.${DOMAIN}`)"
+      rule: "Host(`proxmox.${DOMAIN}`) || Host(`pve.${DOMAIN}`)"
       service: "proxmox"
     truenas:
-      rule: "Host(`truenas.${DOMAIN}`)"
+      rule: "Host(`truenas.${DOMAIN}`) || Host(`illmatic.${DOMAIN}`)"
       service: "truenas"
   services:
     nexus:
