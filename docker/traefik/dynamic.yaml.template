@@ -8,6 +8,9 @@ http:
     dashboard:
       rule: Host(`traefik.${DOMAIN}`)
       service: "api@internal"
+    dockge:
+      rule: "Host(`dockge.${DOMAIN}`) || Host(`docker.${DOMAIN}`)"
+      service: "dockge"
     fallback:
       priority: -1
       rule: "HostRegexp(`^[^.]+\\.${DOMAIN}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN}$`)"
@@ -21,20 +24,31 @@ http:
     truenas:
       rule: "Host(`truenas.${DOMAIN}`) || Host(`illmatic.${DOMAIN}`)"
       service: "truenas"
+    warpgate:
+      rule: "Host(`warpgate.${DOMAIN}`)"
+      service: "warpgate"
   services:
+    dockge:
+      loadBalancer:
+        servers:
+          - url: "http://${HOST_C_IP}:5001"
     nexus:
       loadBalancer:
         servers:
-          - url: "https://${TRUENAS_HOST_IP}:8443"
+          - url: "https://${HOST_C_IP}:8443"
     plex:
       loadBalancer:
         servers:
-          - url: "https://${PLEX_HOST_IP}:32400"
+          - url: "https://${HOST_C_IP}:32400"
     proxmox:
       loadBalancer:
         servers:
-          - url: "https://${NEXUS_HOST_IP}:8006"
+          - url: "https://${HOST_B_IP}:8006"
     truenas:
       loadBalancer:
         servers:
-          - url: "https://${TRUENAS_HOST_IP}"
+          - url: "https://${HOST_C_IP}"
+    warpgate:
+      loadBalancer:
+        servers:
+          - url: "https://${HOST_A_IP}:8443"

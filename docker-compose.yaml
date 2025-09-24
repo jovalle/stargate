@@ -184,7 +184,7 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN:?no domain provided}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.stargate.${DOMAIN:?no domain provided},*.${DOMAIN:?no domain provided}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.k8s.${DOMAIN},*.prod.${DOMAIN},*.dev.${DOMAIN},*.nexus.${DOMAIN},*.stargate.${DOMAIN},*.watchtower.${DOMAIN},*.${DOMAIN}
       - --entrypoints.websecure.http.tls=true
       - --log.level=INFO
       - --providers.docker.exposedbydefault=false
@@ -204,11 +204,11 @@ services:
     labels:
       homepage.description: Reverse proxy for exposing apps via HTTPS
       homepage.group: Core
-      homepage.href: https://traefik.stargate.${DOMAIN:?no domain provided}
+      homepage.href: https://traefik.${DOMAIN:?no domain provided}
       homepage.icon: traefik
       homepage.name: Traefik (Stargate)
       homepage.widget.type: traefik
-      homepage.widget.url: http://stargate:8081
+      homepage.widget.url: http://traefik:8080
     networks:
       backend: {}
       default: {}
