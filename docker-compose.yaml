@@ -114,6 +114,28 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+  gatus:
+    container_name: gatus
+    image: twinproduction/gatus
+    labels:
+      homepage.description: Health dashboard and automatic status page
+      homepage.group: Core
+      homepage.href: https://status.${DOMAIN:?no domain defined}
+      homepage.icon: gatus
+      homepage.name: Gatus
+      homepage.widget.fields: '["up", "down", "uptime"]'
+      homepage.widget.type: gatus
+      homepage.widget.url: http://stargate:8888
+      traefik.enable: true
+      traefik.http.routers.gatus.rule: Host(`status.${DOMAIN:?no domain defined}`)
+      traefik.http.services.gatus.loadbalancer.server.port: 8080
+    ports:
+      - 8888:8080
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/gatus/config:/config
+      - ${CONFIG_PATH:-./docker}/gatus/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   golink:
     container_name: golink
     environment:
@@ -151,11 +173,12 @@ services:
     environment:
       TS_AUTH_KEY: ${TAILSCALE_AUTH_KEY:?no tailscale auth key provided}
       TS_AUTH_ONCE: true
-      TS_EXTRA_ARGS: --advertise-exit-node
+      TS_EXTRA_ARGS: --accept-routes=true --advertise-routes=${LAN_CIDR:-192.168.0.0/24} --advertise-exit-node=true
       TS_HOSTNAME: stargate
       TS_ROUTES: ${LAN_CIDR:-192.168.0.0/24}
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: false
+    hostname: stargate
     image: tailscale/tailscale
     labels:
       homepage.description: Private WireGuard Network
@@ -208,7 +231,7 @@ services:
       homepage.icon: traefik
       homepage.name: Traefik (Stargate)
       homepage.widget.type: traefik
-      homepage.widget.url: http://traefik:8080
+      homepage.widget.url: http://stargate:8080
     networks:
       backend: {}
       default: {}
@@ -228,7 +251,7 @@ services:
     labels:
       homepage.description: Component Health Tracking and Alerting
       homepage.group: Core
-      homepage.href: https://status.${DOMAIN:?no domain provided}
+      homepage.href: https://uptime-kuma.${DOMAIN:?no domain provided}
       homepage.icon: uptime-kuma
       homepage.name: Uptime Kuma
       homepage.widget.slug: technis
@@ -236,7 +259,7 @@ services:
       homepage.widget.url: http://stargate:3001
       traefik.enable: true
       traefik.http.routers.uptime-kuma.entrypoints: websecure
-      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.stargate.${DOMAIN:?no domain provided}`) || Host(`status.${DOMAIN:?no domain provided}`) || Host(`status.${DOMAIN_EXT:?no external domain provided}`)
+      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.${DOMAIN:?no domain provided}`)
       traefik.http.routers.uptime-kuma.tls: true
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:

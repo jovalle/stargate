@@ -24,9 +24,10 @@ _PipelineMapping
 acme.json
 cli_pw
 config_backups
+config.yaml
 dhcp.leases
-docker/adguard/work
 docker/adguard/*/*.yaml
+docker/adguard/work
 docker/golink/.config
 docker/traefik/dynamic.yaml
 gravity_backups

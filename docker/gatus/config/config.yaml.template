@@ -1,0 +1,79 @@
+---
+alerting:
+  telegram:
+    failure-threshold: 1
+    id: "${TELEGRAM_BOT_CHAT_ID}"
+    send-on-resolved: true
+    success-threshold: 1
+    token: "${TELEGRAM_BOT_API_KEY}"
+connectivity:
+  checker:
+    interval: 30s
+    target: 1.1.1.1:53
+endpoint-defaults: &defaults
+  alerts:
+    - type: telegram
+  client:
+    timeout: 10s
+  conditions:
+    - "[STATUS] == 200"
+  group: internal
+  interval: 30s
+endpoints:
+  - <<: *defaults
+    name: bazarr
+    url: "http://nexus:6767"
+  - <<: *defaults
+    group: external
+    name: kromgo
+    ui:
+      hide-hostname: true
+      hide-url: true
+    url: ${KROMGO_URL}
+  - <<: *defaults
+    name: navidrome
+    url: "http://nexus:4533"
+  - <<: *defaults
+    group: external
+    name: overseerr
+    url: https://request.${DOMAIN}
+  - <<: *defaults
+    conditions:
+      - "[STATUS] == 401"
+    group: external
+    name: plex
+    url: https://watchtower.${DOMAIN}
+  - <<: *defaults
+    name: portainer
+    url: "http://nexus:9999"
+  - <<: *defaults
+    name: profilarr
+    url: "http://nexus:6868"
+  - <<: *defaults
+    name: prowlarr
+    url: "http://nexus:9696"
+  - <<: *defaults
+    name: radarr
+    url: "http://nexus:7878"
+  - <<: *defaults
+    name: sonarr
+    url: "http://nexus:8989"
+  - <<: *defaults
+    group: external
+    name: tautulli
+    url: https://stats.${DOMAIN}
+  - <<: *defaults
+    group: external
+    name: wizarr
+    url: https://join.${DOMAIN}
+metrics: true
+storage:
+  path: /data/data.db
+  type: sqlite
+ui:
+  header: Technis
+  link: https://github.com/jovalle/technis
+  logo: https://avatars.githubusercontent.com/u/47045210
+  title: Status | Technis
+web:
+  port: 8080
