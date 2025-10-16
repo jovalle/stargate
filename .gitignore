@@ -28,6 +28,7 @@ config.yaml
 dhcp.leases
 docker/adguard/*/*.yaml
 docker/adguard/work
+docker/gatus/data
 docker/golink/.config
 docker/traefik/dynamic.yaml
 gravity_backups
