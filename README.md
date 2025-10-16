@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./stargate.jpg" height="400px"/>
+<img src="./.github/assets/logo.png" height="400"/>
 
 # Stargate
 
@@ -8,44 +8,92 @@ Provides a warp link strong enough to call ships to a planet's surface
 
 </div>
 
-## 📖 Overview
+## ✨ Overview
 
-Homelab essential services (DNS, DHCP, etc.)
+Stargate is a batteries-included Docker Compose collection that keeps a homelab reachable, observable, and secure. It brings together reverse proxies, DNS, certificate management, telemetry, and automated updates so day-to-day upkeep stays low-effort while resiliency stays high.
 
-## 🧰 Components
+## 🚀 Highlights
 
-- [AdGuard Home](https://github.com/AdguardTeam/Adguardhome): Network-wide ad blocking via built-in DNS. Replaces [Pi-Hole](https://pi-hole.net).
-- [AdGuardHome Sync](https://github.com/bakito/adguardhome-sync): Synchronizes instances of AdGuard Home for HA deployments.
-- [Beszel Agent](https://www.beszel.dev/): Lightweight server monitoring.
-- [Cloudflare DDNS](https://hub.docker.com/r/oznu/cloudflare-ddns/): Dynamic DNS client for updating upstream DNS records.
-- [Cloudflared](https://github.com/cloudflare/cloudflared): Cloudflare tunnel for remote access without exposing ports on WAN.
-- [Docker Socket Proxy](https://github.com/Tecnativa/docker-socket-proxy): Secured proxy for Homepage to watch Docker.
-- [Nginx Proxy Manager](https://nginxproxymanager.com/): Network-wide reverse proxying.
-- [Node Exporter](https://github.com/prometheus/node_exporter): Presents host resource metrics to be consumed by Prometheus and displayed by Grafana.
-- [Orb](https://orb.net): Continuous network performance and health monitoring.
-- [Tailscale](https://tailscale.com): WireGuard powered, infrastructure agnostic, VPN service.
-- [Traefik](https://traefik.io): Reverse proxy for serving other components with HTTPS enabled URLs. Using Let's Encrypt for quick and easy HTTPS certificates.
-- [Uptime Kuma](https://github.com/louislam/uptime-kuma): Monitoring dashboard and alerting for internal and external endpoints.
-- [Watchtower](https://containrrr.dev/watchtower/): Keeps an eye on colocated containers and updates them while I'm (hopefully) sleeping.
+- End-to-end encrypted access for internal services without opening inbound firewall ports.
+- Automated DNS, certificate issuance, and dynamic IP syncing for smooth domain management.
+- Unified observability via uptime checks, resource metrics, and health dashboards.
+- Safe automation layers (socket proxy, watchtower) that reduce blast radius while enabling self-healing updates.
+- Built for portability: drop the stack on any Docker-capable host and customize via environment variables. Works well with [nexus](https://github.com/jovalle/nexus)!
 
-## 📋 Environment Variables
+## 🧰 Service Lineup
 
-Use `.env` to provide/override variables set throughout `docker-compose.yml`. Only containers referencing changed variables will be restarted.
+| Service | Purpose | Notes |
+| --- | --- | --- |
+| AdGuard Home | DNS-level filtering and DHCP | Primary network edge with optional multi-instance sync. |
+| AdGuardHome Sync | Config sync | Keeps multiple AdGuard nodes aligned. |
+| Beszel Agent | Lightweight telemetry | Streams host metrics into the Beszel dashboard. |
+| Cloudflare DDNS | Dynamic DNS | Updates public DNS with the current WAN IP. |
+| Cloudflared | Zero-trust tunnels | Publishes internal services through Cloudflare without port forwarding. |
+| Docker Socket Proxy | Hardened Docker access | Limits what dashboards can trigger against the Docker daemon. |
+| Nginx Proxy Manager | TLS reverse proxy | Friendly UI for ingress rules and certificates. |
+| Node Exporter | System metrics | Prometheus-compatible metrics endpoint for the host. |
+| Orb | Latency & throughput checks | Speed tests and monitoring. |
+| Tailscale | Mesh VPN | Securely links remote clients to the homelab network. |
+| Traefik | Smart edge router | Automates HTTPS via Let's Encrypt and routes to services. |
+| Uptime Kuma | Synthetic monitoring | Pings, HTTP checks, keyword checks, and alerting. |
+| Watchtower | Automated updates | Rolls containers forward on new image builds. |
 
-```sh
-ADMIN_EMAIL="REDACTED"
-ADMIN_PASSWORD="REDACTED"
-ADMIN_USERNAME="REDACTED"
-ADMIN2_PASSWORD="REDACTED"
-BESZEL_KEY="REDACTED"
-CLOUDFLARE_API_TOKEN="REDACTED"
-CLOUDFLARE_EMAIL="REDACTED"
-CLOUDFLARED_TOKEN="REDACTED"
-DOMAIN="REDACTED"
-PGID=1000
-PUID=1000
-TAILSCALE_AUTH_KEY="REDACTED" # only needed when onboarding new devices
-TAILSCALE_DEVICE_ID="REDACTED"
-TAILSCALE_DEVICE_KEY="" # rotate every 90d
-TZ="America/New_York"
-```
+## 🛠️ Getting Started
+
+### Install
+
+1. Clone the repository to your homelab host.
+
+   ```sh
+   git clone https://github.com/jovalle/stargate.git
+   cd stargate
+   ```
+
+2. Create `.env`  and populate it with your secrets (see the table below). It should not be committed (as per `.gitignore`) but tread carefully anyways.
+
+   ```sh
+   vim .env
+   ```
+
+3. Review `docker-compose.yaml` and adjust any service-specific volumes, ports, or networks.
+
+4. Bring the stack online.
+
+   ```sh
+   docker compose up -d
+   ```
+
+5. Visit the exposed web UIs (for example Traefik, Nginx Proxy Manager, Uptime Kuma) through your tunnel or VPN and finish any first-run onboarding.
+
+### Updating
+
+- To refresh service images manually: `docker compose pull && docker compose up -d`.
+- Watchtower is enabled by default. If you prefer manual control, disable or set its scope in `docker-compose.yaml`.
+
+## 🔐 Environment Variables
+
+All secrets and configuration values live in `.env`. The compose file reads them automatically at deploy time. Rotate them regularly and store backups in your secret manager of choice.
+
+| Variable | Description | Example Value |
+| --- | --- | --- |
+| `ADGUARD_ADMIN_PASSWORD_HASHED` | Bcrypt-hashed admin password for AdGuard Home. | `$2a$10$<bcrypt-hash>` |
+| `ADGUARD_ADMIN_PASSWORD` | Plaintext admin password for first-time setup (optional once hashed). | `replace-me-strong-pass` |
+| `ADMIN_EMAIL` | Email used for dashboards, alerts, and ACME registration. | `admin@example.com` |
+| `ADMIN_PASSWORD` / `ADMIN_USERNAME` | Shared admin user credentials for UI components that require them. | `stargate-admin` / `super-secure-pass` |
+| `ADMIN2_PASSWORD` | Secondary admin credential where required. | `another-strong-pass` |
+| `BAZARR_API_KEY` | API token for Bazarr integrations. | `bazarr_api_key_here` |
+| `BESZEL_KEY` | Beszel agent enrollment key. | `ssh-ed25519 AAAA...` |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_EMAIL` | Cloudflare API credentials for DNS updates. | `cf_api_token_goes_here` / `me@example.com` |
+| `CLOUDFLARED_TOKEN` | Tunnel token generated by Cloudflare Zero Trust. | `eyJhbGciOi...` |
+| `DOMAIN`, `DOMAIN_EXT`, `DOMAIN_INT` | Primary vanity domain plus external/internal zones. | `example.net`, `example.com`, `home.example` |
+| `HOST_IP` | LAN IP of the Docker host. | `192.168.1.10` |
+| `KROMGO_URL` | Metrics endpoint consumed by internal dashboards. | `https://grafana.example.com/api/...` |
+| `PGID` / `PUID` | Group and user IDs used for container file ownership. | `1000` |
+| `PORTAINER_API_KEY` | Scoped API key for Portainer automations. | `ptr_<redacted>` |
+| `SABNZBD_API_KEY` | API key for SABnzbd automation. | `sabnzbd_api_key_here` |
+| `TAILSCALE_AUTH_KEY` | Reusable or single-use auth key for Tailscale enrollment. | `tskey-auth-<redacted>` |
+| `TAILSCALE_DEVICE_ID` / `TAILSCALE_DEVICE_KEY` | Tailscale device credentials (rotate every 90 days). | `device-id-here` / `tskey-api-<redacted>` |
+| `TELEGRAM_BOT_API_KEY` / `TELEGRAM_BOT_CHAT_ID` | Telegram bot credentials for alerting. | `telegram_bot_api_key` / `123456789` |
+| `TZ` | Host timezone in tz database format. | `America/New_York` |
+
+> ❗️ Tip: keep real secrets in `.env` or a secret manager like 1Password or Vault, then inject them into the host environment before running `docker compose up`.
