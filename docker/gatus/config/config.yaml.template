@@ -11,8 +11,6 @@ connectivity:
     interval: 30s
     target: 1.1.1.1:53
 endpoint-defaults: &defaults
-  alerts:
-    - type: telegram
   client:
     timeout: 10s
   conditions:
@@ -21,59 +19,176 @@ endpoint-defaults: &defaults
   interval: 30s
 endpoints:
   - <<: *defaults
-    name: bazarr
-    url: "http://nexus:6767"
+    name: adguard-1
+    url: "https://adguard-1.${DOMAIN}"
   - <<: *defaults
-    group: external
+    name: adguard-2
+    url: "https://adguard-2.${DOMAIN}"
+  - <<: *defaults
+    name: authelia
+    url: "https://authelia.${DOMAIN}"
+  - <<: *defaults
+    name: bazarr
+    url: "https://bazarr.${DOMAIN}/api/system/status?apikey=${BAZARR_API_KEY}"
+  - <<: *defaults
+    name: beszel
+    url: "https://beszel.${DOMAIN}"
+  - <<: *defaults
+    name: console-nexus
+    url: "https://console.nexus.${DOMAIN}"
+  - <<: *defaults
+    name: console-stargate
+    url: "https://console.stargate.${DOMAIN}"
+  - <<: *defaults
+    name: dockge
+    url: "https://dockge.${DOMAIN}"
+  - <<: *defaults
+    name: dockpeek
+    url: "https://dockpeek.${DOMAIN}"
+  - <<: *defaults
+    name: dozzle
+    url: "https://dozzle.${DOMAIN}"
+  - <<: *defaults
+    name: excalidraw
+    url: "https://excalidraw.${DOMAIN}"
+  - <<: *defaults
+    name: flaresolverr
+    url: "https://flaresolverr.${DOMAIN}"
+  - <<: *defaults
+    name: glances
+    url: "https://glances.${DOMAIN}"
+  - <<: *defaults
+    name: grafana
+    url: "https://grafana.${DOMAIN}"
+  - <<: *defaults
+    name: harborguard
+    url: "https://harborguard.${DOMAIN}"
+  - <<: *defaults
+    name: homepage
+    url: "https://homepage.${DOMAIN}"
+  - <<: *defaults
+    name: immich
+    url: "https://immich.${DOMAIN}"
+  - <<: *defaults
     name: kromgo
-    ui:
-      hide-hostname: true
-      hide-url: true
-    url: ${KROMGO_URL}
+    url: "https://kromgo.${DOMAIN}/query?format=endpoint&metric=node_memory_usage&style=flat&label=memory"
+  - <<: *defaults
+    name: lidarr
+    url: "https://lidarr.${DOMAIN}/ping"
+  - <<: *defaults
+    name: mytabs
+    url: "https://mytabs.${DOMAIN}"
   - <<: *defaults
     name: navidrome
-    url: "http://nexus:4533"
+    url: "http://navidrome.${DOMAIN}"
   - <<: *defaults
-    group: external
+    name: nextcloud
+    url: "https://nextcloud.${DOMAIN}"
+  - <<: *defaults
     name: overseerr
-    url: https://request.${DOMAIN}
+    url: "https://overseerr.${DOMAIN}"
+  - <<: *defaults
+    name: paperless
+    url: "https://paperless.${DOMAIN}"
+  - <<: *defaults
+    name: pgadmin
+    url: "https://pgadmin.${DOMAIN}"
   - <<: *defaults
     conditions:
       - "[STATUS] == 401"
-    group: external
     name: plex
-    url: https://watchtower.${DOMAIN}
+    url: https://plex.${DOMAIN}
   - <<: *defaults
     name: portainer
-    url: "http://nexus:9999"
+    url: "https://portainer.${DOMAIN}"
   - <<: *defaults
+    conditions:
+      - "[STATUS] == 401"
     name: profilarr
-    url: "http://nexus:6868"
+    url: "https://profilarr.${DOMAIN}"
+  - <<: *defaults
+    name: prometheus
+    url: "https://prometheus.${DOMAIN}"
   - <<: *defaults
     name: prowlarr
-    url: "http://nexus:9696"
+    url: "https://prowlarr.${DOMAIN}/ping"
+  - <<: *defaults
+    name: qbittorrent
+    url: "https://qbittorrent.${DOMAIN}"
   - <<: *defaults
     name: radarr
-    url: "http://nexus:7878"
+    url: "https://radarr.${DOMAIN}/ping"
+  - <<: *defaults
+    name: sabnzbd
+    url: "https://sabnzbd.${DOMAIN}/api?mode=status&skip_dashboard=0&apikey=${SABNZBD_API_KEY}"
   - <<: *defaults
     name: sonarr
-    url: "http://nexus:8989"
+    url: "https://sonarr.${DOMAIN}/ping"
   - <<: *defaults
-    group: external
+    name: syncthing
+    url: "https://syncthing.${DOMAIN}"
+  - <<: *defaults
     name: tautulli
-    url: https://stats.${DOMAIN}
+    url: "http://tautulli.${DOMAIN}"
+  - <<: *defaults
+    name: traefik-1
+    url: "http://traefik-1.${DOMAIN}"
+  - <<: *defaults
+    name: traefik-2
+    url: "http://traefik-2.${DOMAIN}"
+  - <<: *defaults
+    name: truenas
+    url: "https://truenas.${DOMAIN}"
+  - <<: *defaults
+    name: wizarr
+    url: "https://wizarr.${DOMAIN}"
+  # External endpoints
+  - <<: *defaults
+    alerts:
+      - type: telegram
+    group: external
+    name: requests
+    url: https://requests.${DOMAIN_EXT}
   - <<: *defaults
     group: external
-    name: wizarr
-    url: https://join.${DOMAIN}
+    name: stat
+    ui:
+      hide-url: true
+    url: ${KROMGO_URL}
+  - <<: *defaults
+    alerts:
+      - type: telegram
+    group: external
+    name: status
+    url: https://status.${DOMAIN_EXT}
+  - <<: *defaults
+    alerts:
+      - type: telegram
+    group: external
+    name: streams
+    url: https://streams.${DOMAIN_EXT}
+  - <<: *defaults
+    alerts:
+      - type: telegram
+    conditions:
+      - "[STATUS] == 401"
+    group: external
+    name: watch
+    url: https://watch.${DOMAIN_EXT}
+  - <<: *defaults
+    alerts:
+      - type: telegram
+    group: external
+    name: join
+    url: https://join.${DOMAIN_EXT}
 metrics: true
 storage:
   path: /data/data.db
   type: sqlite
 ui:
   header: Technis
-  link: https://github.com/jovalle/technis
-  logo: https://avatars.githubusercontent.com/u/47045210
+  link: https://${DOMAIN_EXT}
+  logo: https://i.imgur.com/pylLXuG.png
   title: Status | Technis
 web:
   port: 8080
