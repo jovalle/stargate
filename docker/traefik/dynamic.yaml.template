@@ -4,35 +4,53 @@
 # Add your external services here that aren't managed by Docker
 
 http:
+  middlewares:
+    go-slug:
+      redirectRegex:
+        permanent: false
+        regex: "^https?://go(?:\\.${DOMAIN_ESCAPED}|\\.${DOMAIN_INT})?/([^/?#]+)(.*)$"
+        replacement: "https://$1.${DOMAIN}$2"
+    https-redirect:
+      redirectScheme:
+        permanent: true
+        scheme: https
   routers:
     console-nexus:
+      middlewares:
+        - https-redirect
       rule: "Host(`console.nexus.${DOMAIN}`)"
       service: "console-nexus"
     console-stargate:
+      middlewares:
+        - https-redirect
       rule: "Host(`console.stargate.${DOMAIN}`)"
       service: "console-stargate"
     dashboard:
       rule: Host(`traefik-1.${DOMAIN}`) || Host(`traefik.${DOMAIN}`) || Host(`traefik.stargate.${DOMAIN}`)
       service: "api@internal"
-    dockge:
-      rule: "Host(`dockge.${DOMAIN}`) || Host(`docker.${DOMAIN}`)"
-      service: "dockge"
     fallback:
+      middlewares:
+        - https-redirect
       priority: -1
       rule: "HostRegexp(`^[^.]+\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nx\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN_ESCAPED}$`)"
       service: "traefik-2"
     gateway:
-      rule: "HostRegexp(`^[^.]+\\.${DOMAIN}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN}$`)"
-      service: "nexus"
-    plex:
-      rule: "Host(`plex.${DOMAIN}`) || Host(`watchtower.${DOMAIN}`)"
-      service: "plex"
-    proxmox:
-      rule: "Host(`proxmox.${DOMAIN}`) || Host(`pve.${DOMAIN}`)"
-      service: "proxmox"
+      middlewares:
+        - https-redirect
       rule: "Host(`gateway.${DOMAIN}`) || Host(`warpgate.${DOMAIN}`)"
       service: "gateway"
+    go:
+      entryPoints:
+        - web
+        - websecure
+      middlewares:
+        - go-slug
+      priority: 100
+      rule: "Host(`go`) || Host(`go.${DOMAIN_INT}`) || Host(`go.${DOMAIN}`)"
+      service: "noop"
     truenas:
+      middlewares:
+        - https-redirect
       rule: "Host(`truenas.${DOMAIN}`) || Host(`nexus.${DOMAIN}`)"
       service: "truenas"
   services:
@@ -48,6 +66,10 @@ http:
       loadBalancer:
         servers:
           - url: "https://192.168.0.1:8443"
+    noop:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:65535"
     traefik-2:
       loadBalancer:
         servers:

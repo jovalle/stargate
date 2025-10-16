@@ -58,6 +58,11 @@ endpoints:
     name: glances
     url: "https://glances.${DOMAIN}"
   - <<: *defaults
+    client:
+      insecure: true
+    name: go
+    url: "http://go/status"
+  - <<: *defaults
     name: grafana
     url: "https://grafana.${DOMAIN}"
   - <<: *defaults
