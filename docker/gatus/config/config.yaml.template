@@ -193,7 +193,7 @@ storage:
 ui:
   header: Technis
   link: https://${DOMAIN_EXT}
-  logo: https://i.imgur.com/pylLXuG.png
+  logo: https://raw.githubusercontent.com/jovalle/techn.is/refs/heads/main/src/assets/logo.svg
   title: Status | Technis
 web:
   port: 8080
