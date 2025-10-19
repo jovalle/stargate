@@ -10,7 +10,9 @@ help:
 # Generate all configuration files from templates
 template:
 	@echo "Generating all configuration files from templates..."
-	@set -a; [ -f .env ] && . ./.env; set +a; \
+	@set -a; [ -f .env ] && . ./.env; \
+	export DOMAIN_ESCAPED=$$(echo "$$DOMAIN" | sed 's/\./\\\\./g'); \
+	set +a; \
 	for template in $$(find docker/ -name "*.template" -type f); do \
 		output=$$(echo $$template | sed 's/\.template$$//'); \
 		echo "  $$template -> $$output"; \

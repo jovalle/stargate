@@ -239,14 +239,10 @@ filtering:
   parental_block_host: family-block.dns.adguard.com
   safebrowsing_block_host: standard-block.dns.adguard.com
   rewrites:
-    - domain: '*.${DOMAIN}'
-      answer: 192.168.0.2
-    - domain: ${DOMAIN}
-      answer: 192.168.0.2
-    - domain: nexus.${DOMAIN_INT}
-      answer: 192.168.0.100
     - domain: '*.${DOMAIN_INT}'
       answer: 192.168.0.1
+    - domain: '*.${DOMAIN}'
+      answer: 192.168.0.2
   safe_fs_patterns:
     - /opt/AdGuardHome/userfilters/*
   safebrowsing_cache_size: 1048576

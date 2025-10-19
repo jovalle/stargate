@@ -5,14 +5,23 @@
 
 http:
   routers:
+    console-nexus:
+      rule: "Host(`console.nexus.${DOMAIN}`)"
+      service: "console-nexus"
+    console-stargate:
+      rule: "Host(`console.stargate.${DOMAIN}`)"
+      service: "console-stargate"
     dashboard:
-      rule: Host(`traefik.${DOMAIN}`)
+      rule: Host(`traefik-1.${DOMAIN}`) || Host(`traefik.${DOMAIN}`) || Host(`traefik.stargate.${DOMAIN}`)
       service: "api@internal"
     dockge:
       rule: "Host(`dockge.${DOMAIN}`) || Host(`docker.${DOMAIN}`)"
       service: "dockge"
     fallback:
       priority: -1
+      rule: "HostRegexp(`^[^.]+\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nx\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN_ESCAPED}$`)"
+      service: "traefik-2"
+    gateway:
       rule: "HostRegexp(`^[^.]+\\.${DOMAIN}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN}$`)"
       service: "nexus"
     plex:
@@ -21,34 +30,29 @@ http:
     proxmox:
       rule: "Host(`proxmox.${DOMAIN}`) || Host(`pve.${DOMAIN}`)"
       service: "proxmox"
+      rule: "Host(`gateway.${DOMAIN}`) || Host(`warpgate.${DOMAIN}`)"
+      service: "gateway"
     truenas:
-      rule: "Host(`truenas.${DOMAIN}`) || Host(`illmatic.${DOMAIN}`)"
+      rule: "Host(`truenas.${DOMAIN}`) || Host(`nexus.${DOMAIN}`)"
       service: "truenas"
-    warpgate:
-      rule: "Host(`warpgate.${DOMAIN}`)"
-      service: "warpgate"
   services:
-    dockge:
+    console-nexus:
       loadBalancer:
         servers:
-          - url: "http://${HOST_C_IP}:5001"
-    nexus:
+          - url: "https://192.168.0.30"
+    console-stargate:
       loadBalancer:
         servers:
-          - url: "https://${HOST_C_IP}:8443"
-    plex:
+          - url: "https://192.168.0.20"
+    gateway:
       loadBalancer:
         servers:
-          - url: "https://${HOST_C_IP}:32400"
-    proxmox:
+          - url: "https://192.168.0.1:8443"
+    traefik-2:
       loadBalancer:
         servers:
-          - url: "https://${HOST_B_IP}:8006"
+          - url: "https://192.168.0.3:8443"
     truenas:
       loadBalancer:
         servers:
-          - url: "https://${HOST_C_IP}"
-    warpgate:
-      loadBalancer:
-        servers:
-          - url: "https://${HOST_A_IP}:8443"
+          - url: "https://192.168.0.3"
