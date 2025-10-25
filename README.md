@@ -6,6 +6,8 @@
 
 Provides a warp link strong enough to call ships to a planet's surface
 
+![Node Uptime](https://img.shields.io/endpoint?url=https://stat.techn.is/query?metric=stargate_uptime&style=flat&label=uptime) ![CPU Usage](https://img.shields.io/endpoint?url=https://stat.techn.is/query?metric=stargate_cpu_usage&style=flat&label=cpu) ![Memory Usage](https://img.shields.io/endpoint?url=https://stat.techn.is/query?metric=stargate_memory_usage&style=flat&label=memory) ![Docker Containers](https://img.shields.io/endpoint?url=https://stat.techn.is/query?metric=stargate_containers_running&style=flat&label=running)
+
 </div>
 
 ## ✨ Overview
