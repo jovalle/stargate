@@ -8,7 +8,7 @@ http:
     go-slug:
       redirectRegex:
         permanent: false
-        regex: "^https?://go(?:\\.${DOMAIN_ESCAPED}|\\.${DOMAIN_INT})?/([^/?#]+)(.*)$"
+        regex: "^https?://go(?:\\.${DOMAIN_ESCAPED})?/([^/?#]+)(.*)$"
         replacement: "https://$1.${DOMAIN}$2"
     https-redirect:
       redirectScheme:
@@ -26,6 +26,8 @@ http:
       rule: "Host(`console.stargate.${DOMAIN}`)"
       service: "console-stargate"
     dashboard:
+      middlewares:
+        - https-redirect
       rule: Host(`traefik-1.${DOMAIN}`) || Host(`traefik.${DOMAIN}`) || Host(`traefik.stargate.${DOMAIN}`)
       service: "api@internal"
     fallback:
@@ -46,7 +48,7 @@ http:
       middlewares:
         - go-slug
       priority: 100
-      rule: "Host(`go`) || Host(`go.${DOMAIN_INT}`) || Host(`go.${DOMAIN}`)"
+      rule: "Host(`go`) || Host(`go.${DOMAIN}`)"
       service: "noop"
     truenas:
       middlewares:

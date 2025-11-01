@@ -22,6 +22,7 @@ services:
       homepage.widget.url: https://adguard-1.${DOMAIN}
       homepage.widget.username: ${ADMIN_USERNAME:?no admin username provided}
       traefik.enable: true
+      traefik.http.routers.adguard.middlewares: https-redirect
       traefik.http.routers.adguard.rule: Host(`adguard-1.${DOMAIN}`) || Host(`adguard.${DOMAIN}`) || Host(`adguard.stargate.${DOMAIN}`)
       traefik.http.services.adguard.loadbalancer.server.port: 80
     networks:
@@ -109,6 +110,7 @@ services:
       homepage.widget.type: gatus
       homepage.widget.url: http://stargate:8888
       traefik.enable: true
+      traefik.http.routers.gatus.middlewares: https-redirect
       traefik.http.routers.gatus.rule: Host(`gatus.${DOMAIN}`) || Host(`status.${DOMAIN}`) || Host(`status.${DOMAIN_EXT:?no external domain provided}`)
       traefik.http.services.gatus.loadbalancer.server.port: 8080
     ports:
@@ -119,11 +121,13 @@ services:
       - ${CONFIG_PATH:-./docker}/gatus/data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
   node-exporter:
-    command: --path.rootfs=/host
+    command:
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
     container_name: node-exporter
     image: quay.io/prometheus/node-exporter
-    ports:
-      - 9100:9100
+    network_mode: host
+    pid: host
     restart: unless-stopped
     volumes:
       - /:/host:ro,rslave
@@ -230,6 +234,7 @@ services:
       homepage.widget.type: uptimekuma
       homepage.widget.url: http://stargate:3001
       traefik.enable: true
+      traefik.http.routers.uptime-kuma.middlewares: https-redirect
       traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.${DOMAIN}`) || Host(`uptime.${DOMAIN}`) || Host(`uptime.${DOMAIN_EXT}`)
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:
@@ -253,5 +258,6 @@ services:
     image: traefik/whoami
     labels:
       traefik.enable: true
+      traefik.http.routers.whoami.middlewares: https-redirect
       traefik.http.routers.whoami.rule: Host(`whoami.${DOMAIN}`)
     restart: unless-stopped

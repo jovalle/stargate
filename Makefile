@@ -1,10 +1,11 @@
-.PHONY: help template clean up down restart logs
+.PHONY: help template clean setup-hooks
 
 # Default target
 help:
 	@echo "Available targets:"
 	@echo "  template            Generate all configuration files from templates"
 	@echo "  clean               Remove generated configuration files"
+	@echo "  setup               Install pre-commit git hooks"
 	@echo "  help                Show this help message"
 
 # Generate all configuration files from templates
@@ -46,3 +47,17 @@ clean:
 	@echo "Cleaning generated configuration files..."
 	@find docker/ -name "*.template" -type f | sed 's/\.template$$//' | xargs rm -f
 	@echo "Clean complete"
+
+# Setup pre-commit hooks
+setup:
+	@echo "Setting up pre-commit git hooks..."
+	@if ! command -v pre-commit >/dev/null 2>&1; then \
+		echo "ERROR: pre-commit is not installed"; \
+		echo "Install it with: pip install pre-commit"; \
+		echo "               or: brew install pre-commit"; \
+		exit 1; \
+	fi
+	@pre-commit install
+	@pre-commit install --hook-type commit-msg
+	@echo "Pre-commit hooks installed successfully"
+	@echo "Hooks will run automatically on git commit"
