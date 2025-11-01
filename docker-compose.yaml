@@ -61,6 +61,21 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+  cadvisor:
+    container_name: cadvisor
+    devices:
+      - /dev/kmsg
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - 8081:8080
+    privileged: true
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
   cloudflared:
     command: tunnel --no-autoupdate run
     container_name: cloudflared
