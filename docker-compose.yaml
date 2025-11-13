@@ -22,7 +22,7 @@ services:
       homepage.widget.url: https://adguard-1.${DOMAIN}
       homepage.widget.username: ${ADMIN_USERNAME:?no admin username provided}
       traefik.enable: true
-      traefik.http.routers.adguard.middlewares: https-redirect
+      traefik.http.routers.adguard.middlewares: https-redirect@file
       traefik.http.routers.adguard.rule: Host(`adguard-1.${DOMAIN}`) || Host(`adguard.${DOMAIN}`) || Host(`adguard.stargate.${DOMAIN}`)
       traefik.http.services.adguard.loadbalancer.server.port: 80
     networks:
@@ -91,7 +91,7 @@ services:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
       DOMAINS: "*.${DOMAIN_EXT:?no external domain provided}"
       IP6_PROVIDER: none
-      PROXIED: true
+      PROXIED: "true"
     image: favonia/cloudflare-ddns
     network_mode: host
     read_only: true
@@ -125,7 +125,7 @@ services:
       homepage.widget.type: gatus
       homepage.widget.url: http://stargate:8888
       traefik.enable: true
-      traefik.http.routers.gatus.middlewares: https-redirect
+      traefik.http.routers.gatus.middlewares: https-redirect@file
       traefik.http.routers.gatus.rule: Host(`gatus.${DOMAIN}`) || Host(`status.${DOMAIN}`) || Host(`status.${DOMAIN_EXT:?no external domain provided}`)
       traefik.http.services.gatus.loadbalancer.server.port: 8080
     ports:
@@ -165,7 +165,7 @@ services:
       - /dev/net/tun:/dev/net/tun
     environment:
       TS_AUTH_KEY: ${TAILSCALE_AUTH_KEY:?no tailscale auth key provided}
-      TS_AUTH_ONCE: true
+      TS_AUTH_ONCE: "true"
       TS_EXTRA_ARGS: --accept-routes=true --advertise-routes=${LAN_CIDR:-192.168.0.0/24} --advertise-exit-node=true
       TS_HOSTNAME: stargate
       TS_ROUTES: ${LAN_CIDR:-192.168.0.0/24}
@@ -249,7 +249,7 @@ services:
       homepage.widget.type: uptimekuma
       homepage.widget.url: http://stargate:3001
       traefik.enable: true
-      traefik.http.routers.uptime-kuma.middlewares: https-redirect
+      traefik.http.routers.uptime-kuma.middlewares: https-redirect@file
       traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.${DOMAIN}`) || Host(`uptime.${DOMAIN}`) || Host(`uptime.${DOMAIN_EXT}`)
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:
@@ -261,7 +261,7 @@ services:
   watchtower:
     container_name: watchtower
     environment:
-      WATCHTOWER_CLEANUP: true
+      WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_DEBUG: true
       WATCHTOWER_SCHEDULE: 0 0 1 * * *
     image: containrrr/watchtower
@@ -273,6 +273,6 @@ services:
     image: traefik/whoami
     labels:
       traefik.enable: true
-      traefik.http.routers.whoami.middlewares: https-redirect
+      traefik.http.routers.whoami.middlewares: https-redirect@file
       traefik.http.routers.whoami.rule: Host(`whoami.${DOMAIN}`)
     restart: unless-stopped
