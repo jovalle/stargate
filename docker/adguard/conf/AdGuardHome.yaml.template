@@ -238,25 +238,7 @@ filtering:
   blocking_mode: default
   parental_block_host: family-block.dns.adguard.com
   safebrowsing_block_host: standard-block.dns.adguard.com
-  rewrites:
-    - domain: '*.${DOMAIN}'
-      answer: 192.168.0.2
-    - domain: 'go'
-      answer: 'go.${DOMAIN}'
-    - domain: 'gateway'
-      answer: 192.168.0.1
-    - domain: 'stargate'
-      answer: 192.168.0.2
-    - domain: 'nexus'
-      answer: 192.168.0.3
-    - domain: 'colossus'
-      answer: 192.168.0.4
-    - domain: 'ms-01'
-      answer: 192.168.0.11
-    - domain: 'ms-02'
-      answer: 192.168.0.12
-    - domain: 'ms-03'
-      answer: 192.168.0.13
+  rewrites: []
   safe_fs_patterns:
     - /opt/AdGuardHome/userfilters/*
   safebrowsing_cache_size: 1048576

@@ -8,12 +8,12 @@ runOnStart: true
 continueOnError: false
 
 origin:
-  url: https://stargate.${DOMAIN}
+  url: https://adguard-1.${DOMAIN}
   username: admin
   password: "${ADGUARD_ADMIN_PASSWORD}"
 
 replicas:
-  - url: https://starport.${DOMAIN}
+  - url: https://adguard-2.${DOMAIN}
     username: admin
     password: "${ADGUARD_ADMIN_PASSWORD}"
 
