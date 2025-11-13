@@ -34,6 +34,12 @@ endpoints:
     name: beszel
     url: "https://beszel.${DOMAIN}"
   - <<: *defaults
+    conditions:
+      - "[CONNECTED] == true"
+    group: egress
+    name: cloudflare
+    url: "icmp://1.1.1.1"
+  - <<: *defaults
     name: console-nexus
     url: "https://console.nexus.${DOMAIN}"
   - <<: *defaults
@@ -76,7 +82,7 @@ endpoints:
     url: "https://immich.${DOMAIN}"
   - <<: *defaults
     name: kromgo
-    url: "https://kromgo.${DOMAIN}/query?format=endpoint&metric=node_memory_usage&style=flat&label=memory"
+    url: "https://kromgo.${DOMAIN}/query?format=endpoint&metric=cluster_memory_usage&style=flat&label=memory"
   - <<: *defaults
     name: lidarr
     url: "https://lidarr.${DOMAIN}/ping"
