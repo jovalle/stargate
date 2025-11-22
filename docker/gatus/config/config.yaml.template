@@ -176,16 +176,22 @@ endpoints:
     alerts:
       - type: telegram
     group: external
-    name: streams
-    url: https://streams.${DOMAIN_EXT}
+    name: dash
+    url: https://dash.${DOMAIN_EXT}
   - <<: *defaults
     alerts:
       - type: telegram
+    client:
+      insecure: true
     conditions:
-      - "[STATUS] == 401"
+      - "[STATUS] == 200"
+      - "[BODY] == pat(*machineIdentifier*)"
     group: external
-    name: watch
-    url: https://watch.${DOMAIN_EXT}
+    name: plex
+    ui:
+      hide-hostname: true
+      hide-url: true
+    url: https://${DDNS_DOMAIN}:32400/identity
   - <<: *defaults
     alerts:
       - type: telegram
