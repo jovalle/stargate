@@ -1,0 +1,74 @@
+# ntfy server configuration
+# See https://docs.ntfy.sh/config/ for detailed documentation
+
+# Base URL for the server - this is used in the web app and in email notifications
+base-url: "https://ntfy.${DOMAIN}"
+
+# Listen address for the HTTP server
+listen-http: ":80"
+
+# Cache file location for message persistence
+cache-file: "/var/cache/ntfy/cache.db"
+
+# Database location for user/topic management
+auth-file: "/var/lib/ntfy/user.db"
+auth-default-access: "deny-all"
+
+# Attachment storage
+attachment-cache-dir: "/var/cache/ntfy/attachments"
+attachment-total-size-limit: "5G"
+attachment-file-size-limit: "15M"
+attachment-expiry-duration: "3h"
+
+# Visitor settings - protection against abuse
+visitor-subscription-limit: 30
+visitor-request-limit-burst: 60
+visitor-request-limit-replenish: "5s"
+visitor-request-limit-exempt-hosts: ""
+visitor-message-daily-limit: 0
+visitor-email-limit-burst: 16
+visitor-email-limit-replenish: "1h"
+visitor-attachment-total-size-limit: "100M"
+visitor-attachment-daily-bandwidth-limit: "500M"
+
+# Rate limiting for login attempts
+visitor-auth-failure-limit-burst: 10
+visitor-auth-failure-limit-replenish: "5m"
+
+# Behind-proxy configuration for proper IP detection
+behind-proxy: true
+
+# Enable web app
+enable-web-app: true
+
+# Disable signup - only admins can create users
+enable-signup: false
+
+# Enable login for authenticated access
+enable-login: true
+
+# Metrics endpoint (useful for monitoring)
+enable-metrics: true
+
+# Keepalive interval
+keepalive-interval: "45s"
+
+# Manager interval for cleanup tasks
+manager-interval: "1m"
+
+# Global topic limit
+global-topic-limit: 15000
+
+# Upstream base URL (leave empty for none)
+upstream-base-url: ""
+
+# SMTP configuration (optional - for email notifications)
+# Uncomment and configure if you want email notifications
+# smtp-sender-addr: "smtp.gmail.com:587"
+# smtp-sender-user: "ntfy@${DOMAIN}"
+# smtp-sender-pass: "your-smtp-password-here"
+# smtp-sender-from: "ntfy@${DOMAIN}"
+
+# Logging
+log-level: "info"
+log-format: "text"

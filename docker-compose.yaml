@@ -146,6 +146,40 @@ services:
     restart: unless-stopped
     volumes:
       - /:/host:ro,rslave
+  ntfy:
+    command:
+      - serve
+    container_name: ntfy
+    environment:
+      TZ: UTC
+    healthcheck:
+      interval: 60s
+      retries: 3
+      start_period: 40s
+      test:
+        - CMD-SHELL
+        - wget -q --tries=1 http://localhost:80/v1/health -O - | grep -q '"healthy":true' || exit 1
+      timeout: 10s
+    hostname: ntfy
+    image: binwiederhier/ntfy
+    labels:
+      homepage.description: Push notifications to phone or desktop
+      homepage.group: Core
+      homepage.href: https://ntfy.${DOMAIN}
+      homepage.icon: ntfy
+      homepage.name: ntfy
+      traefik.enable: true
+      traefik.http.routers.ntfy.middlewares: https-redirect@file
+      traefik.http.routers.ntfy.rule: Host(`ntfy.${DOMAIN}`)
+      traefik.http.services.ntfy.loadbalancer.server.port: 80
+    ports:
+      - 8001:80
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ${CONFIG_PATH:-./docker}/ntfy/cache:/var/cache/ntfy
+      - ${CONFIG_PATH:-./docker}/ntfy/config/server.yml:/etc/ntfy/server.yml:ro
+      - ${CONFIG_PATH:-./docker}/ntfy/data:/var/lib/ntfy
   orb:
     container_name: orb
     image: orbforge/orb

@@ -34,6 +34,7 @@ Stargate is a batteries-included Docker Compose collection that keeps a homelab 
 | Docker Socket Proxy | Hardened Docker access | Limits what dashboards can trigger against the Docker daemon. |
 | Nginx Proxy Manager | TLS reverse proxy | Friendly UI for ingress rules and certificates. |
 | Node Exporter | System metrics | Prometheus-compatible metrics endpoint for the host. |
+| ntfy | Push notifications | Self-hosted pub-sub notification service with authentication and rate limiting. |
 | Orb | Latency & throughput checks | Speed tests and monitoring. |
 | Tailscale | Mesh VPN | Securely links remote clients to the homelab network. |
 | Traefik | Smart edge router | Automates HTTPS via Let's Encrypt and routes to services. |

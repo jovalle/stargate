@@ -32,6 +32,7 @@ docker/adguard/*/*.yaml
 docker/adguard/work
 docker/gatus/data
 docker/golink/.config
+docker/ntfy/config/server.yml
 docker/traefik/dynamic.yaml
 gravity.db_temp*
 gravity_backups
