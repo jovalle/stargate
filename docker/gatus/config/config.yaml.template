@@ -1,11 +1,7 @@
 ---
 alerting:
-  telegram:
-    failure-threshold: 1
-    id: "${TELEGRAM_BOT_CHAT_ID}"
-    send-on-resolved: true
-    success-threshold: 1
-    token: "${TELEGRAM_BOT_API_KEY}"
+  discord:
+    webhook-url: "${DISCORD_WEBHOOK_URL}"
 connectivity:
   checker:
     interval: 30s
@@ -156,7 +152,7 @@ endpoints:
   # External endpoints
   - <<: *defaults
     alerts:
-      - type: telegram
+      - type: discord
     group: external
     name: requests
     url: https://requests.${DOMAIN_EXT}
@@ -168,19 +164,19 @@ endpoints:
     url: ${KROMGO_URL}
   - <<: *defaults
     alerts:
-      - type: telegram
+      - type: discord
     group: external
     name: status
     url: https://status.${DOMAIN_EXT}
   - <<: *defaults
     alerts:
-      - type: telegram
+      - type: discord
     group: external
     name: dash
     url: https://dash.${DOMAIN_EXT}
   - <<: *defaults
     alerts:
-      - type: telegram
+      - type: discord
     client:
       insecure: true
     conditions:
@@ -194,7 +190,7 @@ endpoints:
     url: https://${DDNS_DOMAIN}:32400/identity
   - <<: *defaults
     alerts:
-      - type: telegram
+      - type: discord
     group: external
     name: join
     url: https://join.${DOMAIN_EXT}
@@ -205,7 +201,7 @@ storage:
 ui:
   header: Technis
   link: https://${DOMAIN_EXT}
-  logo: https://raw.githubusercontent.com/jovalle/techn.is/refs/heads/main/src/assets/logo.svg
+  logo: https://ik.imagekit.io/technis/logo.png
   title: Status | Technis
 web:
   port: 8080
