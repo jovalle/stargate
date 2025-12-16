@@ -29,31 +29,52 @@ template:
 	@set -a; [ -f .env ] && . ./.env; \
 	export DOMAIN_ESCAPED=$$(echo "$$DOMAIN" | sed 's/\./\\\\./g'); \
 	set +a; \
-	for template in $$(find docker/ -name "*.template" -type f); do \
+	rendered=0; \
+	skipped=0; \
+	for template in $$(find docker/ -type f -name "*.template" 2>/dev/null); do \
+		skip=false; \
+		template_dir=$$(dirname "$$template"); \
+		while IFS= read -r pattern; do \
+			[ -z "$$pattern" ] && continue; \
+			echo "$$pattern" | grep -q '^#' && continue; \
+			case "$$pattern" in \
+				*/) if echo "$$template_dir/" | grep -qF "$$pattern"; then skip=true; break; fi ;; \
+				*) if echo "$$template_dir" | grep -qF "$$pattern"; then skip=true; break; fi ;; \
+			esac; \
+		done < .gitignore; \
+		$$skip && continue; \
 		output=$$(echo $$template | sed 's/\.template$$//'); \
-		echo "  $$template -> $$output"; \
+		printf "  ⟳ %-70s" "$$template"; \
 		temp_file=$$(mktemp); \
+		error_msg=""; \
 		vars_in_template=$$(grep -o '\$$[{][A-Z_][A-Z0-9_]*[}]' "$$template" 2>/dev/null || true); \
 		if ! envsubst < "$$template" > "$$temp_file" 2>/dev/null; then \
-			echo "ERROR: envsubst failed for $$template"; \
-			rm -f "$$temp_file"; \
-			exit 1; \
+			error_msg="envsubst failed"; \
 		fi; \
-		if [ -n "$$vars_in_template" ]; then \
+		if [ -z "$$error_msg" ] && [ -n "$$vars_in_template" ]; then \
 			for var in $$vars_in_template; do \
 				var_name=$$(echo "$$var" | sed 's/\$$[{]\([^}]*\)[}]/\1/'); \
 				eval "var_value=\$$$$var_name"; \
 				if [ -z "$$var_value" ]; then \
-					echo "ERROR: Variable $$var is not set in $$output"; \
-					rm -f "$$temp_file"; \
-					exit 1; \
+					error_msg="Variable $$var is not set"; \
+					break; \
 				fi; \
 			done; \
 		fi; \
+		if [ -n "$$error_msg" ]; then \
+			printf "\r  ✗ %-70s\n" "$$template"; \
+			echo "    ERROR: $$error_msg"; \
+			rm -f "$$temp_file"; \
+			exit 1; \
+		fi; \
 		mv "$$temp_file" "$$output"; \
 		chmod 644 "$$output"; \
-	done
-	@echo "All templates generated successfully"
+		printf "\r  ✓ %-70s\n" "$$template"; \
+		rendered=$$((rendered + 1)); \
+	done; \
+	echo ""; \
+	[ $$skipped -gt 0 ] && echo "⊘ Skipped $$skipped gitignored output(s)"; \
+	echo "All templates ($$rendered) generated successfully"
 
 # Clean generated files
 cleanup: clean

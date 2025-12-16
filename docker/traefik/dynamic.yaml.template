@@ -2,59 +2,142 @@
 # docker/traefik/dynamic.yaml:/etc/traefik/dynamic.yaml
 # This file is watched for changes and automatically reloaded by Traefik
 # Add your external services here that aren't managed by Docker
+#
+# DEFAULTS (configured in docker-compose.yaml entrypoints):
+# - All HTTP traffic redirects to HTTPS (web entrypoint)
+# - All HTTPS traffic gets "internal" middleware by default (websecure entrypoint)
+# - To expose a service to the internet, explicitly use "external@file" middleware
 
 http:
   middlewares:
-    go-slug:
-      redirectRegex:
-        permanent: false
-        regex: "^https?://go(?:\\.${DOMAIN_ESCAPED})?/([^/?#]+)(.*)$"
-        replacement: "https://$1.${DOMAIN}$2"
+    # ===========================================
+    # SECURITY MIDDLEWARES
+    # ===========================================
+
+    # CrowdSec integration - collaborative threat detection
+    crowdsec-bouncer:
+      forwardauth:
+        address: http://crowdsec-traefik-bouncer:8080/api/v1/forwardAuth
+        trustForwardHeader: true
+
+    # Security headers for all responses
+    security-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customFrameOptionsValue: "SAMEORIGIN"
+        referrerPolicy: "strict-origin-when-cross-origin"
+        permissionsPolicy: "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+        customResponseHeaders:
+          X-Robots-Tag: "noindex, nofollow, nosnippet, noarchive"
+          server: ""
+
+    # Rate limiting - general use (100 req/s average, 200 burst)
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1s
+
+    # Rate limiting - strict for sensitive endpoints (10 req/s)
+    rate-limit-strict:
+      rateLimit:
+        average: 10
+        burst: 20
+        period: 1s
+
+    # Rate limiting - API endpoints (50 req/s)
+    rate-limit-api:
+      rateLimit:
+        average: 50
+        burst: 100
+        period: 1s
+
+    # ===========================================
+    # MIDDLEWARE CHAINS
+    # ===========================================
+
+    # Internal services (DEFAULT - applied via entrypoint)
+    # Applies: Security headers only (HTTPS redirect handled by entrypoint)
+    internal:
+      chain:
+        middlewares:
+          - security-headers
+
+    # External/internet-exposed services (opt-in override)
+    # Applies: CrowdSec, security headers, rate limiting
+    external:
+      chain:
+        middlewares:
+          - crowdsec-bouncer
+          - security-headers
+          - rate-limit
+
+    # External API endpoints (opt-in override)
+    # Applies: CrowdSec, security headers, API rate limiting
+    external-api:
+      chain:
+        middlewares:
+          - crowdsec-bouncer
+          - security-headers
+          - rate-limit-api
+
+    # ===========================================
+    # UTILITY MIDDLEWARES
+    # ===========================================
+
     https-redirect:
       redirectScheme:
         permanent: true
         scheme: https
+
+    # Strip sensitive headers from upstream responses
+    strip-sensitive-headers:
+      headers:
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""
+
+  # ===========================================
+  # ROUTERS
+  # ===========================================
+  # Note: "internal" middleware is applied by default via entrypoint
+  # Only specify middlewares when overriding (e.g., external)
   routers:
+    adguard:
+      rule: "Host(`adguard-2.${DOMAIN}`) || Host(`adguard.nexus.${DOMAIN}`)"
+      service: "nexus"
     console-nexus:
-      middlewares:
-        - https-redirect
       rule: "Host(`console.nexus.${DOMAIN}`)"
       service: "console-nexus"
     console-stargate:
-      middlewares:
-        - https-redirect
       rule: "Host(`console.stargate.${DOMAIN}`)"
       service: "console-stargate"
     dashboard:
-      middlewares:
-        - https-redirect
       rule: Host(`traefik-1.${DOMAIN}`) || Host(`traefik.${DOMAIN}`) || Host(`traefik.stargate.${DOMAIN}`)
       service: "api@internal"
     fallback:
-      middlewares:
-        - https-redirect
       priority: -1
       rule: "HostRegexp(`^[^.]+\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nx\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN_ESCAPED}$`)"
-      service: "traefik-2"
+      service: "traefik"
     gateway:
-      middlewares:
-        - https-redirect
       rule: "Host(`gateway.${DOMAIN}`) || Host(`warpgate.${DOMAIN}`)"
       service: "gateway"
-    go:
-      entryPoints:
-        - web
-        - websecure
-      middlewares:
-        - go-slug
-      priority: 100
-      rule: "Host(`go`) || Host(`go.${DOMAIN}`)"
-      service: "noop"
-    truenas:
-      middlewares:
-        - https-redirect
-      rule: "Host(`truenas.${DOMAIN}`) || Host(`nexus.${DOMAIN}`)"
-      service: "truenas"
+    nexus:
+      rule: "Host(`nexus.${DOMAIN}`)"
+      service: "nexus"
+    proxmox:
+      rule: "Host(`proxmox.${DOMAIN}`) || Host(`pve.${DOMAIN}`)"
+      service: "proxmox"
+
+  # ===========================================
+  # SERVICES
+  # ===========================================
   services:
     console-nexus:
       loadBalancer:
@@ -68,19 +151,34 @@ http:
       loadBalancer:
         servers:
           - url: "https://192.168.1.1"
-    noop:
+    nexus:
       loadBalancer:
         servers:
-          - url: "http://127.0.0.1:65535"
+          - url: "https://192.168.1.3"
     proxmox:
       loadBalancer:
         servers:
           - url: "https://192.168.10.10:8006"
-    traefik-2:
+    traefik:
       loadBalancer:
         servers:
           - url: "https://192.168.1.3:8443"
-    truenas:
-      loadBalancer:
-        servers:
-          - url: "https://192.168.1.3"
+
+# ===========================================
+# TLS CONFIGURATION
+# ===========================================
+tls:
+  options:
+    default:
+      minVersion: VersionTLS12
+      sniStrict: true
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+    modern:
+      minVersion: VersionTLS13
+      sniStrict: true

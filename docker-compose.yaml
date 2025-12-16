@@ -22,7 +22,6 @@ services:
       homepage.widget.url: https://adguard-1.${DOMAIN}
       homepage.widget.username: ${ADMIN_USERNAME:?no admin username provided}
       traefik.enable: true
-      traefik.http.routers.adguard.middlewares: https-redirect@file
       traefik.http.routers.adguard.rule: Host(`adguard-1.${DOMAIN}`) || Host(`adguard.${DOMAIN}`) || Host(`adguard.stargate.${DOMAIN}`)
       traefik.http.services.adguard.loadbalancer.server.port: 80
     networks:
@@ -37,7 +36,7 @@ services:
       - 3000:3000/tcp
       - 5443:5443/tcp
       - 5443:5443/udp
-      - 6060:6060/tcp
+      - 6061:6060/tcp # conflicts with crowdsec
       - 8843:443/tcp
       - 8880:80/tcp
     restart: unless-stopped
@@ -83,6 +82,51 @@ services:
       TUNNEL_TOKEN: ${CLOUDFLARED_TOKEN:?no cloudflared token provided}
     image: cloudflare/cloudflared
     restart: unless-stopped
+  crowdsec:
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/whitelist-good-actors crowdsecurity/nginx crowdsecurity/linux crowdsecurity/base-http-scenarios crowdsecurity/http-dos crowdsecurity/sshd"
+      DISABLE_ONLINE_API: "false"
+      GID: "${PGID:-1000}"
+      LOCAL_API_URL: "http://127.0.0.1:8080"
+    image: crowdsecurity/crowdsec:latest
+    labels:
+      homepage.description: Collaborative IPS and threat detection
+      homepage.group: Core
+      homepage.href: https://app.crowdsec.net
+      homepage.icon: crowdsec
+      homepage.name: CrowdSec
+    networks:
+      backend: {}
+      default: {}
+    ports:
+      - 8082:8080
+      - 6060:6060
+    restart: unless-stopped
+    volumes:
+      - ${CONFIG_PATH:-./docker}/crowdsec/acquis:/etc/crowdsec/acquis.d:ro
+      - ${CONFIG_PATH:-./docker}/crowdsec/config/profiles.yaml:/etc/crowdsec/profiles.yaml
+      - ${CONFIG_PATH:-./docker}/crowdsec/data:/var/lib/crowdsec/data
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  crowdsec-traefik-bouncer:
+    container_name: crowdsec-traefik-bouncer
+    depends_on:
+      - crowdsec
+    environment:
+      CROWDSEC_AGENT_HOST: crowdsec:8080
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_KEY:?no crowdsec bouncer key provided}
+      GIN_MODE: release
+    image: fbonalair/traefik-crowdsec-bouncer
+    labels:
+      homepage.description: CrowdSec bouncer for Traefik
+      homepage.group: Core
+      homepage.icon: crowdsec
+      homepage.name: CrowdSec Bouncer
+    networks:
+      backend: {}
+      default: {}
+    restart: unless-stopped
   ddns:
     cap_drop:
       - all
@@ -125,8 +169,9 @@ services:
       homepage.widget.type: gatus
       homepage.widget.url: http://stargate:8888
       traefik.enable: true
-      traefik.http.routers.gatus.middlewares: https-redirect@file
-      traefik.http.routers.gatus.rule: Host(`gatus.${DOMAIN}`) || Host(`status.${DOMAIN}`) || Host(`status.${DOMAIN_EXT:?no external domain provided}`)
+      traefik.http.routers.gatus-external.middlewares: external@file
+      traefik.http.routers.gatus-external.rule: Host(`status.${DOMAIN_EXT:?no external domain provided}`)
+      traefik.http.routers.gatus.rule: Host(`gatus.${DOMAIN}`) || Host(`status.${DOMAIN}`)
       traefik.http.services.gatus.loadbalancer.server.port: 8080
     ports:
       - 8888:8080
@@ -169,7 +214,6 @@ services:
       homepage.icon: ntfy
       homepage.name: ntfy
       traefik.enable: true
-      traefik.http.routers.ntfy.middlewares: https-redirect@file
       traefik.http.routers.ntfy.rule: Host(`ntfy.${DOMAIN}`)
       traefik.http.services.ntfy.loadbalancer.server.port: 80
     ports:
@@ -204,7 +248,7 @@ services:
       TS_HOSTNAME: stargate
       TS_ROUTES: ${LAN_CIDR:-192.168.0.0/24}
       TS_STATE_DIR: /var/lib/tailscale
-      TS_USERSPACE: false
+      TS_USERSPACE: "false"
     hostname: stargate
     image: tailscale/tailscale
     labels:
@@ -222,6 +266,8 @@ services:
       - ${CONFIG_PATH:-./docker}/tailscale:/var/lib/tailscale
   traefik:
     command:
+      - --accesslog=true
+      - --accesslog.format=json
       - --api.dashboard=true
       - --api.insecure=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
@@ -232,15 +278,19 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.k8s.${DOMAIN},*.prod.${DOMAIN},*.dev.${DOMAIN},*.nexus.${DOMAIN},*.stargate.${DOMAIN},*.watchtower.${DOMAIN},*.${DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.k8s.${DOMAIN},*.prod.${DOMAIN},*.dev.${DOMAIN},*.nexus.${DOMAIN},*.stargate.${DOMAIN},*.watchtower.${DOMAIN},*.${DOMAIN},*.${DOMAIN_EXT}
       - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.middlewares=internal@file
       - --log.level=INFO
+      - --providers.docker.defaultRule=Host(`{{ normalize .Name }}.${DOMAIN}`)
       - --providers.docker.exposedbydefault=false
       - --providers.docker=true
       - --providers.file.filename=/etc/traefik/dynamic.yaml
       - --providers.file.watch=true
       - --serverstransport.insecureskipverify=true
     container_name: traefik
+    depends_on:
+      - crowdsec-traefik-bouncer
     environment:
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
       CLOUDFLARE_EMAIL: ${CLOUDFLARE_EMAIL:?no cloudflare email provided}
@@ -283,8 +333,9 @@ services:
       homepage.widget.type: uptimekuma
       homepage.widget.url: http://stargate:3001
       traefik.enable: true
-      traefik.http.routers.uptime-kuma.middlewares: https-redirect@file
-      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.${DOMAIN}`) || Host(`uptime.${DOMAIN}`) || Host(`uptime.${DOMAIN_EXT}`)
+      traefik.http.routers.uptime-kuma-external.middlewares: external@file
+      traefik.http.routers.uptime-kuma-external.rule: Host(`uptime.${DOMAIN_EXT}`)
+      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.${DOMAIN}`) || Host(`uptime.${DOMAIN}`)
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:
       - 3001:3001
@@ -296,7 +347,7 @@ services:
     container_name: watchtower
     environment:
       WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_DEBUG: true
+      WATCHTOWER_DEBUG: "true"
       WATCHTOWER_SCHEDULE: 0 0 1 * * *
     image: containrrr/watchtower
     restart: unless-stopped
@@ -306,7 +357,14 @@ services:
     container_name: whoami
     image: traefik/whoami
     labels:
+      homepage.description: HTTP request/response debugging
+      homepage.group: Tools
+      homepage.href: https://whoami.${DOMAIN}
+      homepage.icon: mdi-web
+      homepage.name: whoami
       traefik.enable: true
-      traefik.http.routers.whoami.middlewares: https-redirect@file
+      traefik.http.routers.whoami-external.middlewares: external@file
+      traefik.http.routers.whoami-external.rule: Host(`whoami.${DOMAIN_EXT}`)
       traefik.http.routers.whoami.rule: Host(`whoami.${DOMAIN}`)
+      traefik.http.services.whoami.loadbalancer.server.port: 80
     restart: unless-stopped
