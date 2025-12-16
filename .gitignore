@@ -33,6 +33,7 @@ docker/adguard/work
 docker/crowdsec
 docker/gatus/data
 docker/golink/.config
+docker/golink/Caddyfile
 docker/ntfy/config/server.yml
 docker/traefik/dynamic.yaml
 gravity_backups

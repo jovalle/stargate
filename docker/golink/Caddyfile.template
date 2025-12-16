@@ -1,0 +1,32 @@
+# Caddy Edge Proxy Configuration
+# Handles HTTP traffic on port 80:
+# - Processes http://go/<slug> as short links (redirect to https://<slug>.${DOMAIN})
+# - Transparently proxies all other traffic to Traefik backend
+# Note: Traefik handles port 443 (HTTPS) directly
+
+http:// {
+    # Match go link requests
+    @golink {
+        host go go.${DOMAIN}
+        path_regexp shortlink ^/([^/?#]+)(.*)$
+    }
+
+    # Handle go links with redirect to HTTPS
+    handle @golink {
+        redir https://{re.shortlink.1}.${DOMAIN}{re.shortlink.2} 302
+    }
+
+    # Passthrough all other HTTP traffic to Traefik
+    handle {
+        reverse_proxy traefik:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}
