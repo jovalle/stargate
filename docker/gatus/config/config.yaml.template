@@ -24,6 +24,8 @@ endpoints:
     name: authelia
     url: "https://authelia.${DOMAIN}"
   - <<: *defaults
+    headers: &auth
+      Authorization: "Basic ${GATUS_AUTH_TOKEN}"
     name: bazarr
     url: "https://bazarr.${DOMAIN}/api/system/status?apikey=${BAZARR_API_KEY}"
   - <<: *defaults
@@ -80,6 +82,7 @@ endpoints:
     name: kromgo
     url: "https://kromgo.${DOMAIN}/query?format=endpoint&metric=cluster_memory_usage&style=flat&label=memory"
   - <<: *defaults
+    headers: *auth
     name: lidarr
     url: "https://lidarr.${DOMAIN}/ping"
   - <<: *defaults
@@ -109,26 +112,31 @@ endpoints:
     name: portainer
     url: "https://portainer.${DOMAIN}"
   - <<: *defaults
-    conditions:
-      - "[STATUS] == 401"
+    headers:
+      <<: *auth
+      X-Api-Key: "${PROFILARR_API_KEY}"
     name: profilarr
-    url: "https://profilarr.${DOMAIN}"
+    url: "https://profilarr.${DOMAIN}/api/settings"
   - <<: *defaults
     name: prometheus
     url: "https://prometheus.${DOMAIN}"
   - <<: *defaults
+    headers: *auth
     name: prowlarr
-    url: "https://prowlarr.${DOMAIN}/ping"
+    url: "https://prowlarr.${DOMAIN}/api/v1/health?apikey=${PROWLARR_API_KEY}"
   - <<: *defaults
     name: qbittorrent
     url: "https://qbittorrent.${DOMAIN}"
   - <<: *defaults
+    headers: *auth
     name: radarr
     url: "https://radarr.${DOMAIN}/ping"
   - <<: *defaults
+    headers: *auth
     name: sabnzbd
     url: "https://sabnzbd.${DOMAIN}/api?mode=status&skip_dashboard=0&apikey=${SABNZBD_API_KEY}"
   - <<: *defaults
+    headers: *auth
     name: sonarr
     url: "https://sonarr.${DOMAIN}/ping"
   - <<: *defaults
@@ -144,8 +152,8 @@ endpoints:
     name: traefik-2
     url: "http://traefik-2.${DOMAIN}"
   - <<: *defaults
-    name: truenas
-    url: "https://truenas.${DOMAIN}"
+    name: nexus
+    url: "https://nexus.${DOMAIN}"
   - <<: *defaults
     name: wizarr
     url: "https://wizarr.${DOMAIN}"
