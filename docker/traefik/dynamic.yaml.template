@@ -9,99 +9,6 @@
 # - To expose a service to the internet, explicitly use "external@file" middleware
 
 http:
-  middlewares:
-    # ===========================================
-    # SECURITY MIDDLEWARES
-    # ===========================================
-
-    # CrowdSec integration - collaborative threat detection
-    crowdsec-bouncer:
-      forwardauth:
-        address: http://crowdsec-traefik-bouncer:8080/api/v1/forwardAuth
-        trustForwardHeader: true
-
-    # Security headers for all responses
-    security-headers:
-      headers:
-        browserXssFilter: true
-        contentTypeNosniff: true
-        forceSTSHeader: true
-        frameDeny: true
-        stsIncludeSubdomains: true
-        stsPreload: true
-        stsSeconds: 31536000
-        customFrameOptionsValue: "SAMEORIGIN"
-        referrerPolicy: "strict-origin-when-cross-origin"
-        permissionsPolicy: "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
-        customResponseHeaders:
-          X-Robots-Tag: "noindex, nofollow, nosnippet, noarchive"
-          server: ""
-
-    # Rate limiting - general use (100 req/s average, 200 burst)
-    rate-limit:
-      rateLimit:
-        average: 100
-        burst: 200
-        period: 1s
-
-    # Rate limiting - strict for sensitive endpoints (10 req/s)
-    rate-limit-strict:
-      rateLimit:
-        average: 10
-        burst: 20
-        period: 1s
-
-    # Rate limiting - API endpoints (50 req/s)
-    rate-limit-api:
-      rateLimit:
-        average: 50
-        burst: 100
-        period: 1s
-
-    # ===========================================
-    # MIDDLEWARE CHAINS
-    # ===========================================
-
-    # Internal services (DEFAULT - applied via entrypoint)
-    # Applies: Security headers only (HTTPS redirect handled by entrypoint)
-    internal:
-      chain:
-        middlewares:
-          - security-headers
-
-    # External/internet-exposed services (opt-in override)
-    # Applies: CrowdSec, security headers, rate limiting
-    external:
-      chain:
-        middlewares:
-          - crowdsec-bouncer
-          - security-headers
-          - rate-limit
-
-    # External API endpoints (opt-in override)
-    # Applies: CrowdSec, security headers, API rate limiting
-    external-api:
-      chain:
-        middlewares:
-          - crowdsec-bouncer
-          - security-headers
-          - rate-limit-api
-
-    # ===========================================
-    # UTILITY MIDDLEWARES
-    # ===========================================
-
-    https-redirect:
-      redirectScheme:
-        permanent: true
-        scheme: https
-
-    # Strip sensitive headers from upstream responses
-    strip-sensitive-headers:
-      headers:
-        customResponseHeaders:
-          X-Powered-By: ""
-          Server: ""
 
   # ===========================================
   # ROUTERS
@@ -109,18 +16,12 @@ http:
   # Note: "internal" middleware is applied by default via entrypoint
   # Only specify middlewares when overriding (e.g., external)
   routers:
-    adguard:
-      rule: "Host(`adguard-2.${DOMAIN}`) || Host(`adguard.nexus.${DOMAIN}`)"
-      service: "nexus"
     console-nexus:
       rule: "Host(`console.nexus.${DOMAIN}`)"
       service: "console-nexus"
     console-stargate:
       rule: "Host(`console.stargate.${DOMAIN}`)"
       service: "console-stargate"
-    dashboard:
-      rule: Host(`traefik-1.${DOMAIN}`) || Host(`traefik.${DOMAIN}`) || Host(`traefik.stargate.${DOMAIN}`)
-      service: "api@internal"
     fallback:
       priority: -1
       rule: "HostRegexp(`^[^.]+\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nx\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN_ESCAPED}$`)"
@@ -128,9 +29,6 @@ http:
     gateway:
       rule: "Host(`gateway.${DOMAIN}`) || Host(`warpgate.${DOMAIN}`)"
       service: "gateway"
-    nexus:
-      rule: "Host(`nexus.${DOMAIN}`)"
-      service: "nexus"
     proxmox:
       rule: "Host(`proxmox.${DOMAIN}`) || Host(`pve.${DOMAIN}`)"
       service: "proxmox"
