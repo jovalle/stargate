@@ -8,12 +8,15 @@ runOnStart: true
 continueOnError: false
 
 origin:
-  url: https://adguard-1.${DOMAIN}
+  url: https://adguard.stargate.${DOMAIN}
   username: admin
   password: "${ADGUARD_ADMIN_PASSWORD}"
 
 replicas:
-  - url: https://adguard-2.${DOMAIN}
+  - url: https://adguard.nexus.${DOMAIN}
+    username: admin
+    password: "${ADGUARD_ADMIN_PASSWORD}"
+  - url: https://adguard.mothership.${DOMAIN}
     username: admin
     password: "${ADGUARD_ADMIN_PASSWORD}"
 

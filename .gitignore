@@ -38,7 +38,6 @@ docker/ntfy/config/server.yml
 docker/traefik/dynamic.yaml
 gravity_backups
 gravity.db_temp*
-gravity_backups
 id_*
 keys.json
 letsencrypt

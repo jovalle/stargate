@@ -19,10 +19,13 @@ services:
       homepage.name: AdGuard Home 1
       homepage.widget.password: ${ADMIN_PASSWORD:?no admin password provided}
       homepage.widget.type: adguard
-      homepage.widget.url: https://adguard-1.${DOMAIN}
+      homepage.widget.url: https://adguard.${DOMAIN}
       homepage.widget.username: ${ADMIN_USERNAME:?no admin username provided}
       traefik.enable: true
-      traefik.http.routers.adguard.rule: Host(`adguard-1.${DOMAIN}`) || Host(`adguard.${DOMAIN}`) || Host(`adguard.stargate.${DOMAIN}`)
+      traefik.http.routers.adguard-main.rule: Host(`adguard.${DOMAIN}`)
+      traefik.http.routers.adguard-main.service: adguard
+      traefik.http.routers.adguard.rule: Host(`adguard.stargate.${DOMAIN}`)
+      traefik.http.routers.adguard.service: adguard
       traefik.http.services.adguard.loadbalancer.server.port: 80
     networks:
       backend:
@@ -311,9 +314,8 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
-      - --entrypoints.websecure.http.tls.domains[0].sans=*.k8s.${DOMAIN},*.prod.${DOMAIN},*.dev.${DOMAIN},*.nexus.${DOMAIN},*.stargate.${DOMAIN},*.watchtower.${DOMAIN},*.${DOMAIN},*.${DOMAIN_EXT}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN},*.stargate.${DOMAIN}
       - --entrypoints.websecure.http.tls=true
-      - --entrypoints.websecure.http.middlewares=internal@file
       - --log.level=INFO
       - --providers.docker.defaultRule=Host(`{{ normalize .Name }}.${DOMAIN}`)
       - --providers.docker.exposedbydefault=false
@@ -335,11 +337,17 @@ services:
     labels:
       homepage.description: Reverse proxy for exposing apps via HTTPS
       homepage.group: Core
-      homepage.href: https://traefik-1.${DOMAIN}
+      homepage.href: https://traefik.${DOMAIN}
       homepage.icon: traefik
       homepage.name: Traefik 1
       homepage.widget.type: traefik
-      homepage.widget.url: http://stargate:8080
+      homepage.widget.url: http://traefik:8080
+      traefik.enable: true
+      traefik.http.routers.traefik-main.rule: Host(`traefik.${DOMAIN}`)
+      traefik.http.routers.traefik-main.service: traefik
+      traefik.http.routers.traefik.rule: Host(`traefik.stargate.${DOMAIN}`)
+      traefik.http.routers.traefik.service: api@internal
+      traefik.http.services.traefik.loadbalancer.server.port: 8080
     networks:
       backend: {}
       default: {}
