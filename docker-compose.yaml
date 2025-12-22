@@ -39,20 +39,25 @@ services:
       - 3000:3000/tcp
       - 5443:5443/tcp
       - 5443:5443/udp
-      - 6061:6060/tcp # conflicts with crowdsec
+      - 6060:6060/tcp
       - 8843:443/tcp
       - 8880:80/tcp
     restart: unless-stopped
     volumes:
-      - ${CONFIG_PATH:-./docker}/adguard/conf:/opt/adguardhome/conf
-      - ${CONFIG_PATH:-./docker}/adguard/work:/opt/adguardhome/work
+      - ./docker/adguard/conf:/opt/adguardhome/conf
+      - ./docker/adguard/work:/opt/adguardhome/work
   adguard-sync:
     command: run --config /config/adguardhome-sync.yaml
     container_name: adguard-sync
+    dns:
+      - 172.52.0.10
     image: ghcr.io/bakito/adguardhome-sync
+    networks:
+      backend: {}
+      default: {}
     restart: unless-stopped
     volumes:
-      - ${CONFIG_PATH:-./docker}/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
+      - ./docker/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
   beszel-agent:
     container_name: beszel-agent
     environment:
@@ -67,7 +72,7 @@ services:
     container_name: cadvisor
     devices:
       - /dev/kmsg
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor
     ports:
       - 8081:8080
     privileged: true
@@ -79,57 +84,24 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
   cloudflared:
+    cap_drop:
+      - ALL
     command: tunnel --no-autoupdate run
     container_name: cloudflared
     environment:
       TUNNEL_TOKEN: ${CLOUDFLARED_TOKEN:?no cloudflared token provided}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 60s
+      test: [ "CMD", "cloudflared", "version" ]
+      timeout: 10s
     image: cloudflare/cloudflared
+    read_only: true
     restart: unless-stopped
-  crowdsec:
-    container_name: crowdsec
-    environment:
-      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve crowdsecurity/whitelist-good-actors crowdsecurity/nginx crowdsecurity/linux crowdsecurity/base-http-scenarios crowdsecurity/http-dos crowdsecurity/sshd"
-      DISABLE_ONLINE_API: "false"
-      GID: "${PGID:-1000}"
-      LOCAL_API_URL: "http://127.0.0.1:8080"
-    image: crowdsecurity/crowdsec:latest
-    labels:
-      homepage.description: Collaborative IPS and threat detection
-      homepage.group: Core
-      homepage.href: https://app.crowdsec.net
-      homepage.icon: crowdsec
-      homepage.name: CrowdSec
-    networks:
-      backend: {}
-      default: {}
-    ports:
-      - 8082:8080
-      - 6060:6060
-    restart: unless-stopped
-    volumes:
-      - ${CONFIG_PATH:-./docker}/crowdsec/acquis:/etc/crowdsec/acquis.d:ro
-      - ${CONFIG_PATH:-./docker}/crowdsec/config/profiles.yaml:/etc/crowdsec/profiles.yaml
-      - ${CONFIG_PATH:-./docker}/crowdsec/data:/var/lib/crowdsec/data
-      - /var/log:/var/log:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-  crowdsec-traefik-bouncer:
-    container_name: crowdsec-traefik-bouncer
-    depends_on:
-      - crowdsec
-    environment:
-      CROWDSEC_AGENT_HOST: crowdsec:8080
-      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_KEY:?no crowdsec bouncer key provided}
-      GIN_MODE: release
-    image: fbonalair/traefik-crowdsec-bouncer
-    labels:
-      homepage.description: CrowdSec bouncer for Traefik
-      homepage.group: Core
-      homepage.icon: crowdsec
-      homepage.name: CrowdSec Bouncer
-    networks:
-      backend: {}
-      default: {}
-    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    user: "65532:65532"
   ddns:
     cap_drop:
       - all
@@ -155,33 +127,15 @@ services:
       TASKS: 1
     image: ghcr.io/tecnativa/docker-socket-proxy
     ports:
-      - 0.0.0.0:2375:2375
+      - 2375:2375
+    read_only: true
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /run:rw,noexec,nosuid
+      - /tmp:rw,noexec,nosuid
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-  gatus:
-    container_name: gatus
-    image: twinproduction/gatus
-    labels:
-      homepage.description: Health dashboard and automatic status page
-      homepage.group: Core
-      homepage.href: https://status.${DOMAIN}
-      homepage.icon: gatus
-      homepage.name: Gatus
-      homepage.widget.fields: '["up", "down", "uptime"]'
-      homepage.widget.type: gatus
-      homepage.widget.url: http://stargate:8888
-      traefik.enable: true
-      traefik.http.routers.gatus-external.middlewares: external@file
-      traefik.http.routers.gatus-external.rule: Host(`status.${DOMAIN_EXT:?no external domain provided}`)
-      traefik.http.routers.gatus.rule: Host(`gatus.${DOMAIN}`) || Host(`status.${DOMAIN}`)
-      traefik.http.services.gatus.loadbalancer.server.port: 8080
-    ports:
-      - 8888:8080
-    restart: unless-stopped
-    volumes:
-      - ${CONFIG_PATH:-./docker}/gatus/config:/config
-      - ${CONFIG_PATH:-./docker}/gatus/data:/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
   golink:
     cap_add:
@@ -192,7 +146,8 @@ services:
       - ALL
     container_name: golink
     depends_on:
-      - traefik
+      traefik:
+        condition: service_started
     image: caddy:alpine
     labels:
       homepage.description: HTTP edge proxy with go link support
@@ -204,9 +159,15 @@ services:
       default: {}
     ports:
       - 80:80
+    read_only: true
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /config:rw,noexec,nosuid,size=16m
+      - /data:rw,noexec,nosuid,size=16m
     volumes:
-      - ${CONFIG_PATH:-./docker}/golink/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/golink/Caddyfile:/etc/caddy/Caddyfile:ro
   newt:
     container_name: newt
     environment:
@@ -227,6 +188,8 @@ services:
     volumes:
       - /:/host:ro,rslave
   ntfy:
+    cap_drop:
+      - ALL
     command:
       - serve
     container_name: ntfy
@@ -249,16 +212,17 @@ services:
       homepage.icon: ntfy
       homepage.name: ntfy
       traefik.enable: true
-      traefik.http.routers.ntfy.rule: Host(`ntfy.${DOMAIN}`)
       traefik.http.services.ntfy.loadbalancer.server.port: 80
     ports:
       - 8001:80
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     user: "1000:1000"
     volumes:
-      - ${CONFIG_PATH:-./docker}/ntfy/cache:/var/cache/ntfy
-      - ${CONFIG_PATH:-./docker}/ntfy/config/server.yml:/etc/ntfy/server.yml:ro
-      - ${CONFIG_PATH:-./docker}/ntfy/data:/var/lib/ntfy
+      - ./docker/ntfy/cache:/var/cache/ntfy
+      - ./docker/ntfy/config/server.yml:/etc/ntfy/server.yml:ro
+      - ./docker/ntfy/data:/var/lib/ntfy
   orb:
     container_name: orb
     image: orbforge/orb
@@ -268,37 +232,36 @@ services:
     network_mode: host
     restart: unless-stopped
     volumes:
-      - ${CONFIG_PATH:-./docker}/orb:/root/.config/orb
+      - ./docker/orb:/root/.config/orb
   tailscale:
     cap_add:
       - NET_ADMIN
-      - SYS_MODULE
+      - NET_RAW
+    cap_drop:
+      - ALL
     container_name: tailscale
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
       TS_AUTH_KEY: ${TAILSCALE_AUTH_KEY:?no tailscale auth key provided}
-      TS_AUTH_ONCE: "true"
-      TS_EXTRA_ARGS: --accept-routes=true --advertise-routes=${LAN_CIDR:-192.168.0.0/24} --advertise-exit-node=true
-      TS_HOSTNAME: stargate
-      TS_ROUTES: ${LAN_CIDR:-192.168.0.0/24}
+      TS_EXTRA_ARGS: --accept-routes=false --advertise-exit-node=true
+      TS_ROUTES: 192.168.1.0/24
+      TS_SOCKET: /var/run/tailscale/tailscaled.sock
       TS_STATE_DIR: /var/lib/tailscale
       TS_USERSPACE: "false"
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 60s
+      test: [ "CMD-SHELL", "tailscale status --json | grep -q 'BackendState.*Running' || exit 1" ]
+      timeout: 10s
     hostname: stargate
     image: tailscale/tailscale
-    labels:
-      homepage.description: Private WireGuard Network
-      homepage.group: Core
-      homepage.href: https://login.tailscale.com/admin/machines
-      homepage.icon: tailscale
-      homepage.name: Tailscale
-      homepage.widget.deviceid: ${TAILSCALE_DEVICE_ID:?device ID required on new devices}
-      homepage.widget.key: ${TAILSCALE_DEVICE_KEY:?no device key provided}
-      homepage.widget.type: tailscale
+    network_mode: host
     restart: unless-stopped
     volumes:
-      - /dev/net/tun:/dev/net/tun
-      - ${CONFIG_PATH:-./docker}/tailscale:/var/lib/tailscale
+      - ./docker/tailscale/data:/var/lib/tailscale:rw
+      - ./docker/tailscale:/var/run/tailscale
   traefik:
     command:
       - --accesslog=true
@@ -311,21 +274,25 @@ services:
       - --certificatesresolvers.letsencrypt.acme.storage=/etc/letsencrypt/acme.json
       - --entrypoints.golinks.address=:8090
       - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.forwardedHeaders.trustedIPs=192.168.1.3/32,172.52.0.0/16,10.0.0.0/8,100.64.0.0/10
       - --entrypoints.websecure.http.tls.certResolver=letsencrypt
       - --entrypoints.websecure.http.tls.domains[0].main=${DOMAIN}
       - --entrypoints.websecure.http.tls.domains[0].sans=*.${DOMAIN},*.stargate.${DOMAIN}
       - --entrypoints.websecure.http.tls=true
       - --log.level=INFO
-      - --providers.docker.defaultRule=Host(`{{ normalize .Name }}.${DOMAIN}`)
+      - --ping=true
+      - --ping.entrypoint=websecure
+      - --providers.docker.defaultRule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAIN}`)
       - --providers.docker.exposedbydefault=false
       - --providers.docker=true
       - --providers.file.filename=/etc/traefik/dynamic.yaml
       - --providers.file.watch=true
       - --serverstransport.insecureskipverify=true
     container_name: traefik
-    depends_on:
-      - crowdsec-traefik-bouncer
     environment:
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
       CLOUDFLARE_EMAIL: ${CLOUDFLARE_EMAIL:?no cloudflare email provided}
@@ -355,12 +322,22 @@ services:
       - 443:443
       - 8080:8080
       - 9080:80
+    read_only: true
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
     volumes:
-      - ${CONFIG_PATH:-./docker}/letsencrypt:/etc/letsencrypt
-      - ${CONFIG_PATH:-./docker}/traefik:/etc/traefik
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/letsencrypt:/etc/letsencrypt
+      - ./docker/traefik:/etc/traefik:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   uptime-kuma:
+    cap_add:
+      - SETGID
+      - SETUID
+    cap_drop:
+      - ALL
     container_name: uptime-kuma
     hostname: uptime-kuma
     image: louislam/uptime-kuma:1
@@ -374,27 +351,37 @@ services:
       homepage.widget.type: uptimekuma
       homepage.widget.url: http://stargate:3001
       traefik.enable: true
-      traefik.http.routers.uptime-kuma-external.middlewares: external@file
-      traefik.http.routers.uptime-kuma-external.rule: Host(`uptime.${DOMAIN_EXT}`)
-      traefik.http.routers.uptime-kuma.rule: Host(`uptime-kuma.${DOMAIN}`) || Host(`uptime.${DOMAIN}`)
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
     ports:
       - 3001:3001
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - ${CONFIG_PATH:-./docker}/uptime-kuma:/app/data
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/uptime-kuma:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   watchtower:
+    cap_drop:
+      - ALL
     container_name: watchtower
     environment:
       WATCHTOWER_CLEANUP: "true"
-      WATCHTOWER_DEBUG: "true"
-      WATCHTOWER_SCHEDULE: 0 0 1 * * *
+      WATCHTOWER_DEBUG: "false"
+      WATCHTOWER_INCLUDE_RESTARTING: "true"
+      WATCHTOWER_NOTIFICATIONS: "shoutrrr"
+      WATCHTOWER_NOTIFICATION_URL: ${DISCORD_WEBHOOK_ENDPOINT:?discord webhook endpoint not provided}
+      WATCHTOWER_POLL_INTERVAL: 86400
+      WATCHTOWER_SCHEDULE: "0 0 3 * * *"
+      WATCHTOWER_TIMEOUT: 60s
     image: containrrr/watchtower
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
   whoami:
+    cap_drop:
+      - ALL
     container_name: whoami
     image: traefik/whoami
     labels:
@@ -404,8 +391,8 @@ services:
       homepage.icon: mdi-web
       homepage.name: whoami
       traefik.enable: true
-      traefik.http.routers.whoami-external.middlewares: external@file
-      traefik.http.routers.whoami-external.rule: Host(`whoami.${DOMAIN_EXT}`)
-      traefik.http.routers.whoami.rule: Host(`whoami.${DOMAIN}`)
       traefik.http.services.whoami.loadbalancer.server.port: 80
+    read_only: true
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true

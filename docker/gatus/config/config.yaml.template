@@ -163,7 +163,7 @@ endpoints:
       - type: discord
     group: external
     name: requests
-    url: https://requests.${DOMAIN_EXT}
+    url: https://requests.${DOMAIN}
   - <<: *defaults
     group: external
     name: stat
@@ -175,13 +175,13 @@ endpoints:
       - type: discord
     group: external
     name: status
-    url: https://status.${DOMAIN_EXT}
+    url: https://status.${DOMAIN}
   - <<: *defaults
     alerts:
       - type: discord
     group: external
     name: dash
-    url: https://dash.${DOMAIN_EXT}
+    url: https://dash.${DOMAIN}
   - <<: *defaults
     alerts:
       - type: discord
@@ -201,14 +201,14 @@ endpoints:
       - type: discord
     group: external
     name: join
-    url: https://join.${DOMAIN_EXT}
+    url: https://join.${DOMAIN}
 metrics: true
 storage:
   path: /data/data.db
   type: sqlite
 ui:
   header: Technis
-  link: https://${DOMAIN_EXT}
+  link: https://www.${DOMAIN}
   logo: https://ik.imagekit.io/technis/logo.png
   title: Status | Technis
 web:
