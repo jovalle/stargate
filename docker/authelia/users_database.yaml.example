@@ -1,0 +1,44 @@
+# =============================================================================
+# Authelia Users Database
+# =============================================================================
+# Password hashes can be generated with:
+#   docker run --rm -it authelia/authelia:latest authelia crypto hash generate argon2
+#
+# Example hash for password "changeme":
+#   $argon2id$v=19$m=65536,t=3,p=4$FA1EvYB3CTJXddlRTk0KAQ$lcnuk8ZHqydzIXZYP5rBr3CzKsrPtu2hBLtejD9loWg
+# =============================================================================
+
+users:
+  # ---------------------------------------------------------------------------
+  # Admin User - Full access, 2FA required
+  # ---------------------------------------------------------------------------
+  admin:
+    disabled: false
+    displayname: "Administrator"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$FA1EvYB3CTJXddlRTk0KAQ$lcnuk8ZHqydzIXZYP5rBr3CzKsrPtu2hBLtejD9loWg"
+    email: "admin@example.com"
+    groups:
+      - admins
+      - api
+
+  # ---------------------------------------------------------------------------
+  # Example Regular User
+  # ---------------------------------------------------------------------------
+  user:
+    disabled: false
+    displayname: "Regular User"
+    password: ""
+    email: "user@example.com"
+    groups:
+      - users
+
+  # ---------------------------------------------------------------------------
+  # Example API-only User (for service accounts/tokens)
+  # ---------------------------------------------------------------------------
+  api-service:
+    disabled: false
+    displayname: "API Service Account"
+    password: ""
+    email: "api-service@example.com"
+    groups:
+      - api

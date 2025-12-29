@@ -30,12 +30,14 @@ config.yaml
 dhcp.leases
 docker/adguard/*/*.yaml
 docker/adguard/work
+docker/authelia/*.txt
+docker/authelia/*.yaml
+docker/authelia/*.yml
 docker/crowdsec
 docker/gatus/data
 docker/golink/.config
 docker/golink/Caddyfile
 docker/ntfy/config/server.yml
-docker/traefik/dynamic.yaml
 gravity_backups
 gravity.db_temp*
 id_*

@@ -9,28 +9,63 @@
 # - To expose a service to the internet, explicitly use "external@file" middleware
 
 http:
+  # ===========================================
+  # MIDDLEWARES
+  #
+  # Note: "internal" middleware is applied by default via entrypoint
+  # Only specify middlewares when overriding (e.g., basic-auth)
+  # ===========================================
+  middlewares:
+    # -------------------------------------------------------------------------
+    # auth - Authelia ForwardAuth Middleware (Standard)
+    # -------------------------------------------------------------------------
+    # Delegates authentication to Authelia for 2FA.
+    # -------------------------------------------------------------------------
+    auth:
+      forwardAuth:
+        address: http://authelia:9091/api/authz/forward-auth
+        trustForwardHeader: true
+        authResponseHeaders:
+          - Remote-User
+          - Remote-Groups
+          - Remote-Email
+          - Remote-Name
+
+    # -------------------------------------------------------------------------
+    # basic-auth - Authelia ForwardAuth with Basic Auth Support (1FA)
+    # -------------------------------------------------------------------------
+    # Same as authelia middleware but with authelia_url parameter.
+    # This is used for 1FA authentication (password only).
+    # -------------------------------------------------------------------------
+    basic-auth:
+      forwardAuth:
+        address: 'http://authelia:9091/api/authz/forward-auth?authelia_url=https://auth.{{ env "DOMAIN" }}'
+        trustForwardHeader: true
+        authResponseHeaders:
+          - Remote-User
+          - Remote-Groups
+          - Remote-Email
+          - Remote-Name
 
   # ===========================================
   # ROUTERS
   # ===========================================
-  # Note: "internal" middleware is applied by default via entrypoint
-  # Only specify middlewares when overriding (e.g., external)
   routers:
     console-nexus:
-      rule: "Host(`console.nexus.${DOMAIN}`)"
+      rule: 'Host(`console.nexus.{{ env "DOMAIN" }}`)'
       service: "console-nexus"
     console-stargate:
-      rule: "Host(`console.stargate.${DOMAIN}`)"
+      rule: 'Host(`console.stargate.{{ env "DOMAIN" }}`)'
       service: "console-stargate"
     fallback:
       priority: -1
-      rule: "HostRegexp(`^[^.]+\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nx\\.${DOMAIN_ESCAPED}$`) || HostRegexp(`^[^.]+\\.nexus\\.${DOMAIN_ESCAPED}$`)"
+      rule: 'HostRegexp(`^[^.]+\.{{ env "DOMAIN" }}$`) || HostRegexp(`^[^.]+\.nx\.{{ env "DOMAIN" }}$`) || HostRegexp(`^[^.]+\.nexus\.{{ env "DOMAIN" }}$`)'
       service: "traefik"
     gateway:
-      rule: "Host(`gateway.${DOMAIN}`) || Host(`warpgate.${DOMAIN}`)"
+      rule: 'Host(`gateway.{{ env "DOMAIN" }}`) || Host(`warpgate.{{ env "DOMAIN" }}`)'
       service: "gateway"
     proxmox:
-      rule: "Host(`proxmox.${DOMAIN}`) || Host(`pve.${DOMAIN}`)"
+      rule: 'Host(`proxmox.{{ env "DOMAIN" }}`) || Host(`pve.{{ env "DOMAIN" }}`)'
       service: "proxmox"
 
   # ===========================================

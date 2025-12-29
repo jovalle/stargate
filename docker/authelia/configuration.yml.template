@@ -1,0 +1,289 @@
+# =============================================================================
+# Authelia Configuration - Authentication & Authorization
+# =============================================================================
+# Provides 1FA (password), 2FA (TOTP/WebAuthn), and API token authentication
+# Integrates with Traefik via forwardAuth middleware
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Theme & Branding
+# -----------------------------------------------------------------------------
+theme: dark
+
+# -----------------------------------------------------------------------------
+# Identity Validation - Controls 2FA registration & password resets
+# -----------------------------------------------------------------------------
+identity_validation:
+  reset_password:
+    jwt_secret: "${AUTHELIA_JWT_SECRET}"
+
+# -----------------------------------------------------------------------------
+# Server Configuration
+# -----------------------------------------------------------------------------
+server:
+  host: 0.0.0.0
+  port: 9091
+  path: ""
+  buffers:
+    read: 16384
+    write: 16384
+  timeouts:
+    read: 6s
+    write: 6s
+    idle: 30s
+  endpoints:
+    authz:
+      forward-auth:
+        implementation: ForwardAuth
+    enable_pprof: false
+    enable_expvars: false
+
+# -----------------------------------------------------------------------------
+# Logging
+# -----------------------------------------------------------------------------
+log:
+  level: info
+  format: json
+  file_path: /config/authelia.log
+  keep_stdout: true
+
+# -----------------------------------------------------------------------------
+# TOTP (Time-based One-Time Password) - 2FA
+# -----------------------------------------------------------------------------
+totp:
+  disable: false
+  issuer: "${DOMAIN}"
+  algorithm: sha1
+  digits: 6
+  period: 30
+  skew: 1
+  secret_size: 32
+
+# -----------------------------------------------------------------------------
+# WebAuthn (FIDO2/Passkeys) - 2FA
+# -----------------------------------------------------------------------------
+webauthn:
+  disable: false
+  display_name: "${DOMAIN}"
+  attestation_conveyance_preference: indirect
+  user_verification: preferred
+  timeout: 60s
+
+# -----------------------------------------------------------------------------
+# Duo Push Notifications - 2FA (Optional)
+# -----------------------------------------------------------------------------
+# duo_api:
+#   hostname: api-XXXXXXXX.duosecurity.com
+#   integration_key: DIXXXXXXXXXXXXXXXXXX
+#   secret_key: XXXXXXXXXXXXXXXXXXXXXXXXXXX
+#   enable_self_enrollment: false
+
+# -----------------------------------------------------------------------------
+# NTP - Time synchronization check
+# -----------------------------------------------------------------------------
+ntp:
+  address: "time.cloudflare.com:123"
+  version: 4
+  max_desync: 3s
+  disable_startup_check: false
+  disable_failure: false
+
+# -----------------------------------------------------------------------------
+# Authentication Backend - File-based user database
+# -----------------------------------------------------------------------------
+authentication_backend:
+  password_reset:
+    disable: false
+    custom_url: ""
+  refresh_interval: 5m
+  file:
+    path: /config/users_database.yaml
+    watch: true
+    search:
+      email: false
+      case_insensitive: false
+    password:
+      algorithm: argon2
+      argon2:
+        variant: argon2id
+        iterations: 3
+        memory: 65536
+        parallelism: 4
+        key_length: 32
+        salt_length: 16
+
+# -----------------------------------------------------------------------------
+# Access Control - Authorization Policies
+# -----------------------------------------------------------------------------
+access_control:
+  # Default policy for unmatched rules
+  default_policy: deny
+
+  networks:
+    # Internal/trusted networks
+    - name: internal
+      networks:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 100.64.0.0/10  # Tailscale CGNAT
+
+  rules:
+    # -------------------------------------------------------------------------
+    # Bypass rules - No authentication required
+    # -------------------------------------------------------------------------
+    # Authelia itself
+    - domain: "auth.${DOMAIN}"
+      policy: bypass
+
+    # API endpoints with valid tokens
+    - domain: "*.${DOMAIN}"
+      policy: one_factor
+      resources:
+        - "^/api/.*$"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+
+    # Health check endpoints
+    - domain: "*.${DOMAIN}"
+      policy: bypass
+      resources:
+        - "^/health$"
+        - "^/ping$"
+        - "^/ready$"
+
+    # OIDC endpoints (required for OAuth2/OIDC flows)
+    - domain: "auth.${DOMAIN}"
+      policy: bypass
+      resources:
+        - "^/api/oidc/.*$"
+
+    # -------------------------------------------------------------------------
+    # One-Factor (1FA) - Password only
+    # -------------------------------------------------------------------------
+    # Internal network access - 1FA sufficient
+    - domain: "*.${DOMAIN}"
+      policy: one_factor
+      networks:
+        - internal
+
+    # -------------------------------------------------------------------------
+    # Two-Factor (2FA) - Password + TOTP
+    # -------------------------------------------------------------------------
+    # All other external services require 2FA by default
+    - domain: "*.${DOMAIN}"
+      policy: two_factor
+
+# -----------------------------------------------------------------------------
+# Session Configuration
+# -----------------------------------------------------------------------------
+session:
+  name: authelia_session
+  same_site: lax
+  secret: "${AUTHELIA_SESSION_SECRET}"
+  expiration: 1h
+  inactivity: 5m
+  remember_me: 1M
+  cookies:
+    - domain: "${DOMAIN}"
+      authelia_url: "https://auth.${DOMAIN}"
+      default_redirection_url: "https://${DOMAIN}"
+      name: authelia_session
+      same_site: lax
+      inactivity: 5m
+      expiration: 1h
+      remember_me: 1M
+
+# -----------------------------------------------------------------------------
+# Regulation - Brute force protection
+# -----------------------------------------------------------------------------
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 5m
+
+# -----------------------------------------------------------------------------
+# Storage Backend - SQLite for single-node
+# -----------------------------------------------------------------------------
+storage:
+  encryption_key: "${AUTHELIA_STORAGE_ENCRYPTION_KEY}"
+  local:
+    path: /config/db.sqlite3
+
+# For multi-node deployments, use PostgreSQL:
+# storage:
+#   encryption_key: "${AUTHELIA_STORAGE_ENCRYPTION_KEY}"
+#   postgres:
+#     address: "tcp://postgres:5432"
+#     database: authelia
+#     username: authelia
+#     password: XXXXXXXXXXXXXXXXXXXXXXX
+#     timeout: 5s
+
+# -----------------------------------------------------------------------------
+# Notifier - Email/SMTP for password resets
+# -----------------------------------------------------------------------------
+# Production SMTP configuration:
+# notifier:
+#   disable_startup_check: false
+#   smtp:
+#     address: "smtp.gmail.com:587"
+#     timeout: 5s
+#     username: "authelia@example.com"
+#     password: "XXXXXXXXXXXXXXXXXXXXXXXXXXX"
+#     sender: "Authelia <authelia@example.com>"
+#     identifier: "auth.example.com"
+#     subject: "[Authelia] {title}"
+#     startup_check_address: "test@example.com"
+#     disable_require_tls: false
+#     disable_html_emails: false
+#     tls:
+#       server_name: "smtp.gmail.com"
+#       skip_verify: false
+#       minimum_version: TLS1.2
+
+# Filesystem notifier (development/testing only)
+notifier:
+  disable_startup_check: false
+  filesystem:
+    filename: /config/notification.txt
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Password Policy
+# -----------------------------------------------------------------------------
+password_policy:
+  standard:
+    enabled: true
+    min_length: 12
+    max_length: 128
+    require_uppercase: true
+    require_lowercase: true
+    require_number: true
+    require_special: true
+
+# -----------------------------------------------------------------------------
+# Privacy Policy (GDPR compliance)
+# -----------------------------------------------------------------------------
+privacy_policy:
+  enabled: false
+  require_user_acceptance: false
+  policy_url: ""
+
+# -----------------------------------------------------------------------------
+# Telemetry - Prometheus metrics
+# -----------------------------------------------------------------------------
+telemetry:
+  metrics:
+    enabled: true
+    address: "tcp://0.0.0.0:9959"
+    buffers:
+      read: 4096
+      write: 4096
+    timeouts:
+      read: 6s
+      write: 6s
+      idle: 30s
