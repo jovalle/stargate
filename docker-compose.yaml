@@ -319,7 +319,7 @@ services:
       - --ping=true
       - --ping.entrypoint=websecure
       - --providers.docker.defaultRule=Host(`{{ index .Labels "com.docker.compose.service" }}.${DOMAIN}`) || Host(`{{ index .Labels "com.docker.compose.service" }}.stargate.${DOMAIN}`)
-      - --providers.docker.exposedbydefault=false
+      - --providers.docker.exposedbydefault=true
       - --providers.docker=true
       - --providers.file.filename=/etc/traefik/dynamic.yaml
       - --providers.file.watch=true
