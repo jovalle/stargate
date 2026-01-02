@@ -1,0 +1,70 @@
+# external-dns configuration
+# Syncs routes from reverse proxy sources to DNS providers
+---
+# DNS providers - where DNS records are written
+# Supports multiple providers (first one is primary)
+providers:
+  - name: adguard-home
+    provider: adguard # Provider type: adguard (default)
+    url: "${DNS_PROVIDER_URL}"
+    username: "${DNS_PROVIDER_USERNAME}"
+    password: "${DNS_PROVIDER_PASSWORD}"
+
+# Sources - reverse proxy instances to discover routes from
+sources:
+  - name: mothership
+    url: "https://traefik.mothership.${DOMAIN}"
+    target_ip: "100.100.1.1"
+    # verify_tls: false
+
+    # Optional: Filter routers to sync (supports wildcards)
+    # Only routers matching this pattern will be synced to DNS
+    # Examples:
+    #   "*-internal"    - Only sync routers ending with "-internal"
+    #   "app-*"         - Only sync routers starting with "app-"
+    #   "*-public-*"    - Only sync routers containing "-public-"
+    #   ""              - No filter (sync all routers)
+    router_filter: ""
+
+    # Filter by middleware (only sync routers using this middleware)
+    middleware_filter: "internal"
+
+  - name: stargate
+    type: traefik # Provider type: traefik, nginx, etc. (default: traefik)
+    url: "https://traefik.stargate.${DOMAIN}"
+    target_ip: "192.168.1.2"
+
+  - name: nexus
+    url: "https://traefik.nexus.${DOMAIN}"
+    target_ip: "192.168.1.3"
+
+# Runtime settings (env vars override if set)
+settings:
+  # Sync mode: "watch" (continuous polling) or "once" (single run)
+  sync_mode: watch
+
+  # Poll interval in seconds (watch mode only)
+  poll_interval: 60
+
+  # Logging level: DEBUG, INFO, WARNING, ERROR
+  log_level: INFO
+
+  # Default zone for discovered routes: "internal" or "external"
+  # - internal: Create DNS rewrites in local DNS provider
+  # - external: Skip local DNS (queries forwarded to upstream)
+  default_zone: internal
+
+# Domain exclusion patterns
+# Supports: exact match, wildcards (*.example.com), regex (~^dev-\d+\.example\.com$)
+exclude_domains:
+  # Exclude Traefik dashboard URLs (management interfaces)
+  - "*.mothership.${DOMAIN}"
+  - "*.stargate.${DOMAIN}"
+  - "*.nexus.${DOMAIN}"
+
+# Static DNS rewrites (always ensured, not auto-removed)
+# Format: domain: ip_or_cname
+static_rewrites:
+  "*.mothership.${DOMAIN}": "100.100.1.1"
+  "*.stargate.${DOMAIN}": "192.168.1.2"
+  "*.nexus.${DOMAIN}": "192.168.1.3"

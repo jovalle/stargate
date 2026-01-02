@@ -34,6 +34,7 @@ docker/authelia/*.txt
 docker/authelia/*.yaml
 docker/authelia/*.yml
 docker/crowdsec
+docker/external-dns/data/
 docker/gatus/data
 docker/golink/.config
 docker/golink/Caddyfile

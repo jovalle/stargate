@@ -204,6 +204,20 @@ services:
     volumes:
       - ./docker/dockhand:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
+  external-dns:
+    cap_drop:
+      - ALL
+    container_name: external-dns
+    depends_on:
+      adguard:
+        condition: service_started
+    image: ghcr.io/jovalle/external-dns
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./docker/external-dns/config:/config:ro
+      - ./docker/external-dns/data:/data
   golink:
     cap_add:
       - NET_BIND_SERVICE
