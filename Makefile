@@ -1,9 +1,11 @@
-.PHONY: help template clean setup start stop restart logs ps
+.PHONY: help template clean setup start stop restart logs ps submodules env-example
 
 # Default target
 help:
 	@echo "Available targets:"
+	@echo "  submodules          Initialize and update git submodules"
 	@echo "  template            Generate all configuration files from templates"
+	@echo "  env-example         Sync .env.example with .env (preserves existing values)"
 	@echo "  clean               Remove generated configuration files"
 	@echo "  setup               Install pre-commit git hooks"
 	@echo ""
@@ -22,9 +24,13 @@ help:
 	@echo "  make stop SERVICE=adguard     # Stop adguard container"
 	@echo "  make logs SERVICE=gatus       # Follow logs for gatus"
 
+# Initialize and update git submodules
+submodules:
+	@git submodule update --init --recursive
+
 # Generate all configuration files from templates
 templates: template
-template:
+template: submodules
 	@echo "Generating all configuration files from templates..."
 	@set -a; [ -f .env ] && . ./.env; \
 	export DOMAIN_ESCAPED=$$(echo "$$DOMAIN" | sed 's/\./\\\\./g'); \
@@ -75,6 +81,37 @@ template:
 	echo ""; \
 	[ $$skipped -gt 0 ] && echo "⊘ Skipped $$skipped gitignored output(s)"; \
 	echo "All templates ($$rendered) generated successfully"
+
+# Sync .env.example with .env (copies structure, preserves existing example values)
+env-example:
+	@if [ ! -f .env ]; then \
+		echo "ERROR: .env file not found"; \
+		exit 1; \
+	fi
+	@echo "Syncing .env.example with .env..."
+	@awk ' \
+		NR == FNR { \
+			if (/^[A-Z_][A-Z0-9_]*=/) { \
+				key = $$0; sub(/=.*/, "", key); \
+				val = $$0; sub(/^[^=]*=/, "", val); \
+				if (val != "") existing[key] = val; \
+			} \
+			next; \
+		} \
+		{ \
+			if (/^[A-Z_][A-Z0-9_]*=/) { \
+				key = $$0; sub(/=.*/, "", key); \
+				if (key in existing) { \
+					print key "=" existing[key]; \
+				} else { \
+					print key "="; \
+				} \
+			} else { \
+				print; \
+			} \
+		} \
+	' .env.example .env > .env.example.tmp && \mv .env.example.tmp .env.example
+	@echo ".env.example synced"
 
 # Clean generated files
 cleanup: clean
