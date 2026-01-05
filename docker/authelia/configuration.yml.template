@@ -21,9 +21,7 @@ identity_validation:
 # Server Configuration
 # -----------------------------------------------------------------------------
 server:
-  host: 0.0.0.0
-  port: 9091
-  path: ""
+  address: tcp://0.0.0.0:9091/
   buffers:
     read: 16384
     write: 16384
@@ -252,7 +250,6 @@ notifier:
     filename: /config/notification.txt
 
 # -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
 # Password Policy
 # -----------------------------------------------------------------------------
 password_policy:
@@ -287,3 +284,33 @@ telemetry:
       read: 6s
       write: 6s
       idle: 30s
+
+# -----------------------------------------------------------------------------
+# OIDC Identity Provider
+# -----------------------------------------------------------------------------
+identity_providers:
+  oidc:
+    jwks:
+      - key_id: main
+        algorithm: RS256
+        use: sig
+        key: {{ secret "/config/oidc_private_key.pem" | mindent 10 "|" | msquote }}
+      - client_id: 'immich'
+        client_name: 'Immich'
+        client_secret: '${IMMICH_CLIENT_SECRET_HASH}'
+        public: false
+        authorization_policy: 'two_factor'
+        require_pkce: false
+        redirect_uris:
+          - 'https://photos.${DOMAIN}/auth/login'
+          - 'https://photos.${DOMAIN}/user-settings'
+          - 'app.immich:///oauth-callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        token_endpoint_auth_method: 'client_secret_post'

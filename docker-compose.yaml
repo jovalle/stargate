@@ -57,14 +57,13 @@ services:
       traefik:
         condition: service_healthy
     environment:
-      AUTHELIA_JWT_SECRET: ${AUTHELIA_JWT_SECRET:?Authelia JWT secret required}
-      AUTHELIA_OIDC_CLIENT_WEBAPP_SECRET: ${AUTHELIA_OIDC_CLIENT_WEBAPP_SECRET:?Authelia OIDC webapp client secret required}
-      AUTHELIA_OIDC_HMAC_SECRET: ${AUTHELIA_OIDC_HMAC_SECRET:?Authelia OIDC HMAC secret required}
-      AUTHELIA_OIDC_ISSUER_PRIVATE_KEY: ${AUTHELIA_OIDC_ISSUER_PRIVATE_KEY:?Authelia OIDC issuer private key required}
       AUTHELIA_SESSION_SECRET: ${AUTHELIA_SESSION_SECRET:?Authelia session secret required}
       AUTHELIA_STORAGE_ENCRYPTION_KEY: ${AUTHELIA_STORAGE_ENCRYPTION_KEY:?Authelia storage encryption key required}
       DOMAIN: ${DOMAIN:?Domain required}
+      IMMICH_CLIENT_SECRET_HASH: ${IMMICH_CLIENT_SECRET_HASH:?Immich OIDC client secret hash required}
+      JWT_SECRET: ${AUTHELIA_JWT_SECRET:?JWT secret required}
       TZ: ${TZ:-UTC}
+      X_AUTHELIA_CONFIG_FILTERS: template
     healthcheck:
       interval: 30s
       retries: 3
