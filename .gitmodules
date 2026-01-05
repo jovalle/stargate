@@ -1,0 +1,3 @@
+[submodule "docker/external-dns"]
+	path = docker/external-dns
+	url = https://github.com/jovalle/external-dns

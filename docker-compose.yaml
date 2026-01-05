@@ -40,6 +40,8 @@ services:
     command: run --config /config/adguardhome-sync.yaml
     container_name: adguard-sync
     image: ghcr.io/bakito/adguardhome-sync
+    labels:
+      traefik.http.services.adguard-sync.loadbalancer.server.port: 8080
     restart: unless-stopped
     volumes:
       - ./docker/adguard/sync/adguardhome-sync.yaml:/config/adguardhome-sync.yaml
@@ -216,8 +218,8 @@ services:
     security_opt:
       - no-new-privileges:true
     volumes:
-      - ./docker/external-dns/config:/config:ro
-      - ./docker/external-dns/data:/data
+      - ./docker/external-dns/docker/config:/config:ro
+      - ./docker/external-dns/docker/data:/data
   golink:
     cap_add:
       - NET_BIND_SERVICE
