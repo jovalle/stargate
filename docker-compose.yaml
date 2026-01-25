@@ -60,6 +60,7 @@ services:
       AUTHELIA_SESSION_SECRET: ${AUTHELIA_SESSION_SECRET:?Authelia session secret required}
       AUTHELIA_STORAGE_ENCRYPTION_KEY: ${AUTHELIA_STORAGE_ENCRYPTION_KEY:?Authelia storage encryption key required}
       DOMAIN: ${DOMAIN:?Domain required}
+      DOMAIN_WATCHDOG_SECRET: ${DOMAIN_WATCHDOG_SECRET:?Domain Watchdog OIDC secret required}
       IMMICH_CLIENT_SECRET_HASH: ${IMMICH_CLIENT_SECRET_HASH:?Immich OIDC client secret hash required}
       JWT_SECRET: ${AUTHELIA_JWT_SECRET:?JWT secret required}
       TZ: ${TZ:-UTC}
@@ -312,6 +313,25 @@ services:
     restart: unless-stopped
     volumes:
       - ./docker/orb:/root/.config/orb
+  redis:
+    cap_add:
+      - SETGID
+      - SETUID
+    cap_drop:
+      - ALL
+    container_name: redis
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
+      timeout: 10s
+    image: redis
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./docker/redis:/data
   tailscale:
     cap_add:
       - NET_ADMIN
