@@ -145,7 +145,7 @@ services:
     container_name: ddns
     environment:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:?no cloudflare api token provided}
-      DOMAINS: "*.${DOMAIN_EXT:?no external domain provided}"
+      DOMAINS: "gateway.${DOMAIN:?no external domain provided}"
       IP6_PROVIDER: none
       PROXIED: "true"
     image: favonia/cloudflare-ddns
@@ -251,9 +251,9 @@ services:
   newt:
     container_name: newt
     environment:
-      - PANGOLIN_ENDPOINT=https://pangolin.${DOMAIN}
-      - NEWT_ID=${NEWT_ID:?no newt id provided}
-      - NEWT_SECRET=${NEWT_SECRET:?no newt secret provided}
+      NEWT_ID: ${NEWT_ID:?no newt id provided}
+      NEWT_SECRET: ${NEWT_SECRET:?no newt secret provided}
+      PANGOLIN_ENDPOINT: https://pangolin.mothership.${DOMAIN}
     image: fosrl/newt
     restart: unless-stopped
   node-exporter:
