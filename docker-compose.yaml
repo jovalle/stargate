@@ -333,6 +333,7 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    user: "65532:65532"
     volumes:
       - ./docker/redis:/data
   tailscale:
